@@ -4,6 +4,8 @@ import math
 import random
 import ipdb
 from seq2seq.models import SimpleSeq2Seq
+from keras.optimizers import RMSprop
+
 
 
 def random_gen(X, Y, batch_size=10):
@@ -31,8 +33,8 @@ def random_gen(X, Y, batch_size=10):
 
 
 def model():
-    model = SimpleSeq2Seq(input_dim=5, hidden_dim=10, output_length=8, output_dim=8, depth=5)
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+    model = SimpleSeq2Seq(input_dim=5, hidden_dim=500, output_length=8, output_dim=8, depth=2)
+    model.compile(loss='categorical_crossentropy', optimizer=RMSprop(lr=1e-7))
     return model
 
 
@@ -42,6 +44,8 @@ def main():
 
     # load model
     model1 = model()
+
+    random.seed(2)
 
     # load data
     train_N = 20
@@ -54,7 +58,7 @@ def main():
     #ipdb.set_trace()
     # train
     model1.fit_generator(generator=train_gen,
-                         epochs=100,
+                         epochs=10,
                          steps_per_epoch=train_step_size,
                          )
 
