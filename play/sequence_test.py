@@ -7,7 +7,6 @@ from seq2seq.models import SimpleSeq2Seq
 from keras.optimizers import RMSprop
 
 
-
 def random_gen(X, Y, batch_size=10):
     while True:
         random.shuffle(X)
@@ -50,12 +49,12 @@ def main():
     # load data
     train_N = 20
     train_X = np.random.random((train_N, 10, 5))
-    #train_Y = np.random.randint(8, size=(train_N, 8, 1))
+    # train_Y = np.random.randint(8, size=(train_N, 8, 1))
     train_Y = np.ones((train_N, 8, 1))
 
     train_gen = random_gen(train_X, train_Y, batch_size=10)
     train_step_size = int(math.ceil(train_N / batch_size))
-    #ipdb.set_trace()
+    # ipdb.set_trace()
     # train
     model1.fit_generator(generator=train_gen,
                          epochs=10,

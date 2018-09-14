@@ -26,6 +26,8 @@ from keras.layers import Input, LSTM, Dense
 from keras.layers import add
 
 from keras.layers import merge
+
+
 def random_gen(X_paths, Y_paths, batch_size=10):
     while True:
         X_Y_paths = list(zip(X_paths, Y_paths))
@@ -34,6 +36,7 @@ def random_gen(X_paths, Y_paths, batch_size=10):
 
         x_batch = []
         y_batch = []
+
         for i, x_path in enumerate(X_paths):
             y_path = Y_paths[i]
             x = np.load(x_path)
@@ -47,33 +50,21 @@ def random_gen(X_paths, Y_paths, batch_size=10):
             if len(x_batch) == batch_size:
                 x_batch = np.concatenate(x_batch)
                 y_batch = np.concatenate(y_batch)
-                yield (x_batch, y_batch)
+
+                # get dy_batch
+                dy_batch = y_batch.copy()
+                for i, ty in enumerate(dy_batch):
+                    new_ty = np.roll(ty, 1, axis=0)
+                    new_ty[0] *= 0.0
+                    dy_batch[i] = new_ty
+                #
+
+                yield ([x_batch, dy_batch], y_batch)
                 x_batch = []
                 y_batch = []
 
 
-def lstm():
-    #model = Sequential()
-    # model.add(Embedding(10, 100, input_length=8))
-    # model.add(LSTM(20, return_sequences=True))
-    # model.add(LSTM(20, return_sequences=True))
-    # model.add(TimeDistributed(Dense(10)))
-    # model.add(Dense(10, activation='sigmoid'))
-    # model.compile(loss='categorical_crossentropy', optimizer=adam(lr=1e-5))
-    # model.summary()
-    model = Sequential()
-    model.add(Bidirectional(LSTM(128, input_shape=(8, 10), return_sequences=True),merge_mode='concat', weights=None))
-    model.add(TimeDistributed(Dense(10, activation='softmax')))
-
-    model.compile(loss='categorical_crossentropy', optimizer=adam(lr=1e-3))
-    #model.add(Dense(10, activation='softmax'))
-    #model.compile(loss='categorical_crossentropy', optimizer=adam(lr=1e-3))
-    #print(model.summary())
-
-    return model
-
 def encode_decoder():
-
     encoder_dim = 20
     decoder_dim = 40
 
@@ -84,7 +75,6 @@ def encode_decoder():
 
     encoder_backward = LSTM(encoder_dim, input_shape=(8, 10), return_state=True, go_backwards=True)
     _, state_h_b, state_c_b = encoder_backward(encoder_inputs)
-
 
     # We discard `encoder_outputs` and only keep the states.
     state_h = merge.concatenate([state_h_f, state_h_b])
@@ -104,29 +94,8 @@ def encode_decoder():
 
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-    model.summary() # maybe Keras bug?
+    model.summary()  # maybe Keras bug?
 
-    return model
-
-# def model():
-#     model = Sequential()
-#     model.add(Dense(16, activation='relu', input_shape=(10,)))
-#     model.add(Dropout(0.2))
-#     model.add(Dense(output_dim=2, activation='softmax'))
-#     model.summary()
-#     model.compile(loss='categorical_crossentropy',
-#                   optimizer=RMSprop(lr=0.00001),
-#                   metrics=['accuracy'])
-
-
-def model():
-    model = SimpleSeq2Seq(input_dim=10, hidden_dim=50, output_length=8, output_dim=10, depth=1)
-    # model = AttentionSeq2Seq(input_dim=10, input_length=8, hidden_dim=250, output_length=8, output_dim=10, depth=1)
-
-    model.compile(loss='categorical_crossentropy', optimizer=adam(lr=1e-4))
-    #model.compile(loss='mse', optimizer=adam(lr=1e-3))
-
-    model.summary()
     return model
 
 
@@ -140,20 +109,13 @@ def train_X_Y_load(data_dir):
     for x_npy in x_npys:
         id = re.findall(r'x_([0-9]+).npy', x_npy)[0]
         y_npy = os.path.join(data_dir, 'y_{}.npy'.format(id))
-        X.append(np.array([np.load(x_npy)]))
-        Y.append(np.array([np.load(y_npy)]))
-    X = np.concatenate(X)
-    Y = np.concatenate(Y)
-
+        X.append(x_npy)
+        Y.append(y_npy)
     return X, Y
 
 
-
-# print('Pad sequences (samples x time)')
 # x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
 # x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
-# print('x_train shape:', x_train.shape)
-# print('x_test shape:', x_test.shape)
 
 
 def main():
@@ -161,9 +123,7 @@ def main():
     batch_size = 10
 
     # load model
-    model1 = model()
-    #model1 = lstm()
-    #model1 = encode_decoder()
+    model1 = encode_decoder()
 
     # load data
     data_dir = '/Users/pjs/byte_play/data/toy_data2/train'
@@ -178,37 +138,18 @@ def main():
     train_N = len(train_X)
     val_N = len(val_X)
 
-
-    # get the encoder for train
-    train_decoder_Y = train_Y.copy()
-    for i, ty in enumerate(train_decoder_Y):
-        new_ty = np.roll(ty ,1, axis=0)
-        new_ty[0] *= 0.0
-        train_decoder_Y[i] = new_ty
-
-    # get the encoder for val
-    val_decoder_Y = val_Y.copy()
-    for i, ty in enumerate(val_decoder_Y):
-        new_ty = np.roll(ty ,1, axis=0)
-        new_ty[0] *= 0.0
-        val_decoder_Y[i] = new_ty
-
+    train_gen = random_gen(train_X, train_Y, batch_size=batch_size)
+    train_step_size = int(math.ceil(train_N / batch_size))
+    val_gen = random_gen(val_X, val_Y, batch_size=batch_size)
+    val_step_size = int(math.ceil(val_N / batch_size))
 
     # train
-    # model1.fit([train_X, train_decoder_Y],
-    #            train_Y,
-    #            batch_size=batch_size,
-    #            validation_data=([val_X, val_decoder_Y], val_Y),
-    #            epochs=400,
-    #            )
-
-    model1.fit(train_X,
-               train_Y,
-               batch_size=batch_size,
-               validation_data=(val_X, val_Y),
-               epochs=400,
-               )
-
+    model1.fit_generator(generator=train_gen,
+                         validation_data=val_gen,
+                         epochs=100,
+                         steps_per_epoch=train_step_size,
+                         validation_steps=val_step_size,
+                         )
 
 
 main()
