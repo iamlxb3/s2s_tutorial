@@ -1,5 +1,6 @@
 data/
-
+*.bin
+*.pkl
 # Compiled source #
 ###################
 *.com

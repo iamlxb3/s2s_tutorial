@@ -51,22 +51,9 @@ def random_gen(X_paths, Y_paths, batch_size=10):
                 x_batch = np.concatenate(x_batch)
                 y_batch = np.concatenate(y_batch)
 
-                # # get dy_batch
-                # dy_batch = y_batch.copy()
-                # for i, ty in enumerate(dy_batch):
-                #     new_ty = np.roll(ty, 1, axis=0)
-                #     new_ty[0] *= 0.0
-                #     dy_batch[i] = new_ty
-                # #
-
-                # get dy_batch
-                dy_batch = np.zeros_like(y_batch)
-
-                yield ([x_batch, dy_batch], y_batch)
+                yield x_batch, y_batch
                 x_batch = []
                 y_batch = []
-
-
 
 
 def train_X_Y_load(data_dir):
@@ -83,33 +70,15 @@ def train_X_Y_load(data_dir):
         Y.append(y_npy)
     return X, Y
 
-def encode_decoder():
-    encoder_dim = 20
-    decoder_dim = 20
 
-    encoder_inputs = Input(shape=(None, 300))
-
-    _, state_h_f, state_c_f = LSTM(encoder_dim, return_state=True)(encoder_inputs)
-
-    #_, state_h_b, state_c_b = LSTM(encoder_dim, return_state=True, go_backwards=True)(encoder_inputs)
-
-    # # We discard `encoder_outputs` and only keep the states.
-    # state_h = merge.concatenate([state_h_f, state_h_b])
-    # state_c = merge.concatenate([state_c_f, state_c_b])
-
-    encoder_states = [state_h_f, state_c_f]
-
-    decoder_inputs = Input(shape=(25, 7560))
-    decoder_outputs = LSTM(decoder_dim, return_sequences=True)(decoder_inputs, initial_state=encoder_states)
-
-    decoder_dense = Dense(7560, activation='softmax')
-    decoder_outputs = decoder_dense(decoder_outputs)
-
-    model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-    model.summary()  # maybe Keras bug?
-
+def model():
+    model = SimpleSeq2Seq(input_shape=(8, 10), hidden_dim=500, output_length=8, output_dim=10, depth=1)
+    # model = AttentionSeq2Seq(input_dim=10, input_length=8, hidden_dim=250, output_length=8, output_dim=10, depth=1)
+    model.compile(loss='categorical_crossentropy', optimizer=adam(lr=1e-4))
+    # model.compile(loss='mse', optimizer=adam(lr=1e-3))
+    model.summary()
     return model
+
 
 # x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
 # x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
@@ -117,36 +86,23 @@ def encode_decoder():
 
 def main():
     # config
-    batch_size = 1
+    batch_size = 10
 
     # load model
-    model1 = encode_decoder()
+    model1 = model()
 
     # load data
-    data_dir = r'D:\byte_cup\data\baseline\train'
-    X, Y = train_X_Y_load(data_dir)
-    print("Load train paths complete!")
-
-    # split into train/val
-    train_X = X[:80]
-    train_Y = Y[:80]
-    val_X = X[80:]
-    val_Y = Y[80:]
-    train_N = len(train_X)
-    val_N = len(val_X)
-
-    train_gen = random_gen(train_X, train_Y, batch_size=batch_size)
-    train_step_size = int(math.ceil(train_N / batch_size))
-    val_gen = random_gen(val_X, val_Y, batch_size=batch_size)
-    val_step_size = int(math.ceil(val_N / batch_size))
+    train_N = 100
+    train_X = np.random.random((train_N, 8, 10))
+    # train_Y = np.random.randint(8, size=(train_N, 8, 1))
+    train_Y = train_X.copy()
 
     # train
-    model1.fit_generator(generator=train_gen,
-                         validation_data=val_gen,
-                         epochs=100,
-                         steps_per_epoch=train_step_size,
-                         validation_steps=val_step_size,
-                         )
+    model1.fit(x=train_X,
+               y=train_Y,
+               batch_size=10,
+               epochs=100,
+               )
 
 
 main()
