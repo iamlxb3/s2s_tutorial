@@ -57,6 +57,7 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
             decoder_input = topi.squeeze().detach()  # detach from history as input
             target_tensor_i = torch.from_numpy(np.array([np.argmax(target_tensor[di])]))
             loss += criterion(decoder_output, target_tensor_i)
+
             if decoder_input.item() == EOS_TOKEN:
                 break
 
@@ -116,4 +117,5 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, learning_r
             loss = train(input_tensor, target_tensor, encoder,
                          decoder, encoder_optimizer, decoder_optimizer, criterion)
             epoch_loss += loss
+        epoch_loss = epoch_loss / epoches
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
