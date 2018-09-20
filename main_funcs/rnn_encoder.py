@@ -4,7 +4,6 @@ from __future__ import unicode_literals, print_function, division
 import torch
 import ipdb
 import torch.nn as nn
-import config
 
 ######################################################################
 # The Encoder
@@ -19,7 +18,7 @@ import config
 #    :alt:
 #
 #
-device = config.get_device()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class EncoderRNN(nn.Module):
     def __init__(self, input_size, hidden_size, n_layers=1):

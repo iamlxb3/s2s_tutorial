@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, division
 import random
-import config
 import time
 import math
 import ipdb
@@ -11,7 +10,7 @@ import torch.nn as nn
 from torch import optim
 
 # MAX_LENGTH = config.get_max_len()
-device = config.get_device()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # SOS_TOKEN = config.get_sos_token()
@@ -20,7 +19,7 @@ device = config.get_device()
 
 
 def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
-          SOS_token, EOS_token, max_length=None, use_teacher_forcing=False):
+          SOS_token, EOS_token, max_length, use_teacher_forcing=False):
     encoder_hidden = encoder.initHidden()
 
     encoder_optimizer.zero_grad()
@@ -106,7 +105,7 @@ def timeSince(since, percent):
 #
 
 def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token,
-               learning_rate=0.01, Y_max_length=None):
+               learning_rate=0.01, max_length=None):
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
 
@@ -119,8 +118,7 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token,
             input_tensor = training_pair[0]
             target_tensor = training_pair[1]
             loss = train(input_tensor, target_tensor, encoder,
-                         decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token,
-                         max_length=Y_max_length)
+                         decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token, max_length)
             epoch_loss += loss
-        epoch_loss = epoch_loss / epoches
+        epoch_loss = epoch_loss / step_size
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
