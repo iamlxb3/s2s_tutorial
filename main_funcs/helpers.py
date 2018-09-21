@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import re
+import math
 
 # from nltk.tokenize import word_tokenize
 # def sentence_to_tensor(sentence, elmo, batch_to_ids):
@@ -42,3 +43,14 @@ def sort_test_xpaths(x_paths):
         x_paths_with_id.append((id, x_path))
     x_paths = [x[1] for x in sorted(x_paths_with_id, key=lambda x:x[0])]
     return x_paths
+
+def pos_encode(pos, dim):
+    pos_embeddings = []
+    for i in range(dim):
+        if i % 2 == 0:
+            pos_embedding = math.cos(pos / 1000 ** (2 * i / dim))
+        else:
+            pos_embedding = math.sin(pos / 1000 ** (2 * i / dim))
+        pos_embeddings.append(pos_embedding)
+    pos_embeddings = np.array([pos_embeddings])
+    return pos_embeddings

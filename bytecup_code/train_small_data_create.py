@@ -4,15 +4,8 @@ import glob
 import torch
 import ipdb
 import pandas as pd
-import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-
-import sys
-
-sys.path.append('..')
-
-from main_funcs.helpers import pos_encode
 
 def main(elmo, batch_to_ids):
 
@@ -21,7 +14,7 @@ def main(elmo, batch_to_ids):
     vocab = pickle.load(open(vocab_path, 'rb'))[:vocab_size]
     data_dir = '/Users/pjs/byte_play/data/bytecup2018'
     train_dir = '/Users/pjs/byte_play/data/bytecup2018/train'
-    txt_paths = glob.glob(os.path.join(data_dir, 'bytecup.corpus.train.8.txt'))
+    txt_paths = glob.glob(os.path.join(data_dir, 'bytecup_small.txt'))
     y_pd_path = '/Users/pjs/byte_play/data/bytecup2018/train_y.csv'
 
     df = {'id': [], 'w_index': [], 'title': []}
@@ -43,24 +36,12 @@ def main(elmo, batch_to_ids):
                 title_words = [x.lower() for x in words2]
                 title_words = ['<SOS>'] + title_words + ['<EOS>']
 
+
+
                 # get the source tensor
                 eng_ids = batch_to_ids([content_words])
                 embeddings = elmo(eng_ids)
                 source_tensor = embeddings['elmo_representations'][0][0]
-
-                # postion encoding
-                pos_tensor = []
-                for w_index, word in enumerate(content_words):
-                    pos_tensor_t = pos_encode(w_index, 1024)
-                    pos_tensor.append(pos_tensor_t)
-                pos_tensor = np.concatenate(pos_tensor)
-                pos_tensor = torch.from_numpy(pos_tensor)
-                #
-
-                # add pos and elmo
-                source_tensor = pos_tensor.float() + source_tensor
-                #
-
                 x_save_path = os.path.join(train_dir, 'x_{}.pt'.format(counter))
                 torch.save(source_tensor, x_save_path)
                 print("Save to {}".format(x_save_path))

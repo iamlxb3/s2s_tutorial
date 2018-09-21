@@ -1,17 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, division
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class AttnDecoderRNN(nn.Module):
     def __init__(self,
-            hidden_size, output_size,
-            n_layers=1, dropout_p=0.1,
-            max_length=None
-    ):
+                 hidden_size, output_size,
+                 n_layers=1, dropout_p=0.1,
+                 max_length=None
+                 ):
         super(AttnDecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size

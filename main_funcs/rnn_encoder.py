@@ -1,24 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, division
-
 import torch
 import ipdb
 import torch.nn as nn
 
-######################################################################
-# The Encoder
-# -----------
-#
-# The encoder of a seq2seq network is a RNN that outputs some value for
-# every word from the input sentence. For every input word the encoder
-# outputs a vector and a hidden state, and uses the hidden state for the
-# next input word.
-#
-# .. figure:: /_static/img/seq-seq-images/encoder-network.png
-#    :alt:
-#
-#
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class EncoderRNN(nn.Module):
     def __init__(self, input_size, hidden_size, n_layers=1):
@@ -28,8 +13,6 @@ class EncoderRNN(nn.Module):
         self.gru = nn.GRU(input_size, hidden_size, self.n_layers)
 
     def forward(self, input, hidden):
-        #embedded = self.embedding(input).view(1, 1, -1)
-        #output = embedded
         input = input.view(1, 1, -1)
         output, hidden = self.gru(input, hidden)
         return output, hidden

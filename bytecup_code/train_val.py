@@ -50,7 +50,7 @@ if __name__ == '__main__':
     N = 20
     epoches = 1
     batch_size = 1
-    max_length = 1000
+    max_length = 1500
     #
 
     # create model
