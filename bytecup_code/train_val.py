@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == '__main__':
     # model config
-    hidden_size = 246
+    hidden_size = 256
     encoder_nlayers = 1
     input_dim = 1024
     #
@@ -36,9 +36,8 @@ if __name__ == '__main__':
     train_x_dir = os.path.join(data_dir, data_set, 'train')
     y_csv_path = os.path.join(data_dir, data_set, 'train_y.csv')
     vocab_path = os.path.join(data_dir, data_set, 'bytecup_vocab.pkl')
-    encoder_path = os.path.join(pkl_dir, 'encoder.pkl')
-    decoder_path = os.path.join(pkl_dir, 'decoder.pkl')
-
+    encoder_path = os.path.join(pkl_dir, '{}_encoder.pkl'.format(data_set))
+    decoder_path = os.path.join(pkl_dir, '{}_decoder.pkl'.format(data_set))
     #
 
     # training config
@@ -47,10 +46,10 @@ if __name__ == '__main__':
     EOS_token = int(vocab.index('<EOS>'))
     SOS_token = int(vocab.index('<SOS>'))
 
-    N = 20
-    epoches = 1
+    N = 1000
+    epoches = 10
     batch_size = 1
-    max_length = 1500
+    max_length = 2000
     #
 
     # create model
@@ -61,6 +60,7 @@ if __name__ == '__main__':
 
     # get generator
     x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))[0:N]
+    random.seed(1)
     random.shuffle(x_paths)
     val_percent = 0.2
     val_index = int(N * 0.2)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     # start training
     trainIters(train_generator, encoder1, attn_decoder1, epoches, step_size, EOS_token, SOS_token, learning_rate=0.01,
-               max_length=max_length)
+               max_length=max_length, verbose=True)
     print('training ok!')
     #
 
@@ -101,6 +101,9 @@ if __name__ == '__main__':
         val_loss.append(loss)
         rogues.append(rogue)
         bleus.append(bleu)
+
+        print("-----------------------------------------------------")
+        print("target_words: ", target_words)
         print("Decoded_words: ", decoded_words)
 
     print("val_loss: ", np.average(val_loss))

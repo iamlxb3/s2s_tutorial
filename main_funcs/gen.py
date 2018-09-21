@@ -26,7 +26,6 @@ def torch_random_train_gen(X_paths, Y_csv_path):
         # tensor_input = tensor_input.float()
         # tensor_output = torch.from_numpy(y)
         # tensor_output = tensor_output.type(torch.LongTensor)
-
         yield (tensor_input, tensor_output)
 
 def torch_test_gen(X_paths):

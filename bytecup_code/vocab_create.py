@@ -7,6 +7,9 @@ import collections
 from nltk.tokenize import word_tokenize
 
 
+# TODO, add strip '"I"m a good boy"s"'.strip('\'"')
+
+
 def main():
     data_dir = '/Users/pjs/byte_play/data/bytecup2018'
     txt_paths = glob.glob(os.path.join(data_dir, '*.txt'))

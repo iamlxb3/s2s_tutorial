@@ -5,6 +5,7 @@ import torch
 import ipdb
 import pandas as pd
 import numpy as np
+import time
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
@@ -13,6 +14,9 @@ import sys
 sys.path.append('..')
 
 from main_funcs.helpers import pos_encode
+
+
+
 
 def main(elmo, batch_to_ids):
 
@@ -33,6 +37,8 @@ def main(elmo, batch_to_ids):
     for txt_path in txt_paths:
         with open(txt_path, 'r') as f:
             for i, line in enumerate(f):
+
+                #step1_t1 = time.time()
                 dict1 = eval(line)
                 content = dict1['content']
                 title = dict1['title']
@@ -42,25 +48,34 @@ def main(elmo, batch_to_ids):
                 words2 = word_tokenize(title)
                 title_words = [x.lower() for x in words2]
                 title_words = ['<SOS>'] + title_words + ['<EOS>']
+                # step1_t2 = time.time()
+                # print("step1: ", step1_t2-step1_t1)
 
+                #step2_t1 = time.time()
                 # get the source tensor
                 eng_ids = batch_to_ids([content_words])
                 embeddings = elmo(eng_ids)
                 source_tensor = embeddings['elmo_representations'][0][0]
+                # step2_t2 = time.time()
+                # print("step2: ", step2_t2 - step2_t1)
+
 
                 # postion encoding
+                #step3_t1 = time.time()
                 pos_tensor = []
                 for w_index, word in enumerate(content_words):
                     pos_tensor_t = pos_encode(w_index, 1024)
                     pos_tensor.append(pos_tensor_t)
                 pos_tensor = np.concatenate(pos_tensor)
                 pos_tensor = torch.from_numpy(pos_tensor)
+                # step3_t2 = time.time()
+                # print("step3: ", step3_t2 - step3_t1)
                 #
 
+                #step4_t1 = time.time()
                 # add pos and elmo
                 source_tensor = pos_tensor.float() + source_tensor
                 #
-
                 x_save_path = os.path.join(train_dir, 'x_{}.pt'.format(counter))
                 torch.save(source_tensor, x_save_path)
                 print("Save to {}".format(x_save_path))
@@ -81,6 +96,13 @@ def main(elmo, batch_to_ids):
                 df['w_index'].append(','.join(word_indexes))
                 df['title'].append(title_words)
                 counter += 1
+
+                # step4_t2 = time.time()
+                # print("step4: ", step4_t2 - step4_t1)
+
+                if i > 1000:
+                    break
+                print("-----------------------------")
 
     df = pd.DataFrame(df)
     df.to_csv(y_pd_path, index=False)

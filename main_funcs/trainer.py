@@ -105,7 +105,7 @@ def timeSince(since, percent):
 #
 
 def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token,
-               learning_rate=0.01, max_length=None):
+               learning_rate=0.01, max_length=None, verbose=False):
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
 
@@ -114,11 +114,16 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token,
     for epoch in range(epoches):
         epoch_loss = 0
         for step in range(step_size):
+
             training_pair = next(train_generator)  # TODO, modify if the batchsize is not 1!
             input_tensor = training_pair[0]
             target_tensor = training_pair[1]
             loss = train(input_tensor, target_tensor, encoder,
                          decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token, max_length)
             epoch_loss += loss
+
+            if verbose:
+                print("Epoch-{} Step-{} Loss: {}".format(epoch, step, loss))
+
         epoch_loss = epoch_loss / step_size
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
