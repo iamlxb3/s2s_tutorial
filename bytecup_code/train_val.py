@@ -46,8 +46,8 @@ if __name__ == '__main__':
     EOS_token = int(vocab.index('<EOS>'))
     SOS_token = int(vocab.index('<SOS>'))
 
-    N = 1000
-    epoches = 10
+    N = 20
+    epoches = 1
     batch_size = 1
     max_length = 2000
     #
