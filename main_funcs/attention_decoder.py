@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import ipdb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -26,21 +27,26 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, input, hidden, encoder_outputs):
-        embedded = self.embedding(input).view(1, 1, -1)
+        embedded = self.embedding(input)
+        embedded = embedded.view(embedded.shape[1], embedded.shape[0], -1)
         embedded = self.dropout(embedded)
 
-        attn_weights = F.softmax(
-            self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
-        attn_applied = torch.bmm(attn_weights.unsqueeze(0),
-                                 encoder_outputs.unsqueeze(0))
+        decoder_input_conca = torch.cat((embedded, hidden), 2)
+        attn_weights = F.softmax(self.attn(decoder_input_conca), dim=2)  # torch.Size([1, batch_size, decoder_length])
 
-        output = torch.cat((embedded[0], attn_applied[0]), 1)
-        output = self.attn_combine(output).unsqueeze(0)
+        attn_weights = attn_weights.permute(1, 0, 2)
+        encoder_outputs = encoder_outputs.permute(1, 0, 2)
+        attn_applied = torch.bmm(attn_weights, encoder_outputs)  # torch.Size([batch_size, 1, feature_dim])
+        attn_applied = attn_applied.permute(1, 0, 2)
+        output = torch.cat((embedded, attn_applied), 2)
+
+        output = self.attn_combine(output)
 
         output = F.relu(output)
         output, hidden = self.gru(output, hidden)
+        output = F.log_softmax(self.out(output), dim=2)
 
-        output = F.log_softmax(self.out(output[0]), dim=1)
+        attn_weights = attn_weights.permute(1, 0, 2)
         return output, hidden, attn_weights
 
     def initHidden(self):

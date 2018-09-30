@@ -48,9 +48,9 @@ if __name__ == '__main__':
     EOS_token = int(vocab.index('<EOS>'))
     SOS_token = int(vocab.index('<SOS>'))
 
-    N = 50
+    N = 500
     epoches = 5
-    batch_size = 1
+    batch_size = 32
     max_length = 150
     num_workers = 1
     lr = 1e-3
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     print("Save decoder to {}.".format(decoder_path))
     #
 
+    # TODO, add batch for validation
     sys.exit()
     # save model
 
