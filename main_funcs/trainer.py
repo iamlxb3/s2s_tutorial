@@ -76,8 +76,13 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    input_length = input_tensor.size(0)
-    target_length = target_tensor.size(0)
+
+    if len(input_tensor.shape) >= 3:
+        input_tensor = input_tensor.squeeze(0)
+        target_tensor = target_tensor.squeeze(0)
+
+    input_length = input_tensor.size(0) # torch.Size([10, 1024])
+    target_length = target_tensor.size(0) # torch.Size([9, 1])
 
 
     encoder_outputs = torch.zeros(max_length, encoder.hidden_size, device=device)
@@ -111,6 +116,9 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
             decoder_input = topi.squeeze().detach()  # detach from history as input
             target_tensor_i = target_tensor[di]
             #target_tensor_i = torch.from_numpy(np.array([np.argmax(target_tensor[di])]))
+            # decoder_output: torch.Size([1, 30212])
+            # target_tensor_i: tensor([ 30211])
+
             loss += criterion(decoder_output, target_tensor_i)
             if decoder_input.item() == EOS_token:
                 break
@@ -137,14 +145,38 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token,
             training_pair = next(train_generator)  # TODO, modify if the batchsize is not 1!
             input_tensor = training_pair[0]
             target_tensor = training_pair[1]
-
-            ipdb.set_trace()
             loss = train(input_tensor, target_tensor, encoder,
                          decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token, max_length)
             epoch_loss += loss
 
             if verbose:
                 print("Epoch-{} Step-{} Loss: {}".format(epoch, step, loss))
+
+        epoch_loss = epoch_loss / step_size
+        print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
+
+def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token,
+               learning_rate=0.01, max_length=None, verbose=False):
+
+
+    # encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
+    # decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
+
+    encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
+    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
+
+    criterion = nn.NLLLoss()
+
+    for epoch in range(epoches):
+        epoch_loss = 0
+        for batch_index, (input_tensor, target_tensor) in enumerate(train_generator):
+
+            loss = train(input_tensor, target_tensor, encoder,
+                         decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token, max_length)
+            epoch_loss += loss
+
+            if verbose:
+                print("Epoch-{} batch_index-{} Loss: {}".format(epoch, batch_index, loss))
 
         epoch_loss = epoch_loss / step_size
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))

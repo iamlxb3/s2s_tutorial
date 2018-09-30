@@ -13,6 +13,7 @@ class EncoderRNN(nn.Module):
         self.gru = nn.GRU(input_size, hidden_size, self.n_layers)
 
     def forward(self, input, hidden):
+        ipdb.set_trace()
         input = input.view(1, 1, -1)
         output, hidden = self.gru(input, hidden)
         return output, hidden
