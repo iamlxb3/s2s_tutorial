@@ -131,6 +131,7 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
 
 def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
               SOS_token, EOS_token, max_length, use_teacher_forcing=False):
+
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
@@ -139,11 +140,13 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
     loss = 0
 
+    encoder_h0 = encoder.initHidden(batch_size)
+
+    # input_tensor: torch.Size([batch_size, time_steps, feature_dim])
+    # encoder_h0: torch.Size([num_layers * num_directions, batch_size, 256])
+    encoder_outputs, encoder_hidden = encoder(input_tensor, encoder_h0)
     # encoder_outputs : torch.Size([time_steps, batch_size, 256]),
     # encoder_hidden: torch.Size([num_layers * num_directions, batch_size, 256])
-
-    encoder_h0 = encoder.initHidden(batch_size)
-    encoder_outputs, encoder_hidden = encoder(input_tensor, encoder_h0)
 
     decoder_input = target_tensor.view(target_tensor.shape[1], target_tensor.shape[0], -1)
 
@@ -173,11 +176,15 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
         decoder_output = decoder_output.squeeze(0)
 
+        print("t: {}, decoder_output: {}".format(t, decoder_output.topk(1)[1][0]))
+
         target_tensor_t = target_tensor[:, t, :]
+
+        # TODO, add attention
 
         loss += criterion(decoder_output, target_tensor_t.squeeze(1))
 
-        if use_teacher_forcing:
+        if not use_teacher_forcing:
             _, topi = decoder_output.topk(1)
             decoder_input_t = topi.squeeze(0).detach()  # detach from history as input
         else:
