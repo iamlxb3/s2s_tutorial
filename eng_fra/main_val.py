@@ -93,6 +93,8 @@ if __name__ == '__main__':
     for i, (src_tensor, target_tensor) in enumerate(val_generator):
         val_id = int(re.findall(r'x_([0-9]+).pt', val_x_paths[i])[0])
 
+        print("target_tensor: ", target_tensor)
+
         loss, decoded_words, target_words, attentions = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
                                                                  vocab, max_length=max_length, EOS_token=EOS_token)
         # TODO, add language model
