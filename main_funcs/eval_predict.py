@@ -131,6 +131,10 @@ def loss_compute(target_tensors, decoded_outputs):
 
     for i, decoded_output in enumerate(decoded_outputs):
         gt_output = target_tensors[i]
+
+        if int(gt_output) == 30212: 
+            break
+
         loss += criterion(decoded_output, gt_output)
 
     loss = float(loss / len(target_tensors))

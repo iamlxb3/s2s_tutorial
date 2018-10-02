@@ -47,12 +47,17 @@ if __name__ == '__main__':
     Vocab_len = len(vocab)
     EOS_token = int(vocab.index('<EOS>'))
     SOS_token = int(vocab.index('<SOS>'))
+    ignore_index = 30212
 
-    N = 2
-    epoches = 1
-    batch_size = 2
-    max_length = 20
-    num_workers = 2
+    print("EOS_token: {}, SOS_token: {}".format(EOS_token, SOS_token))
+
+    use_teacher_forcing = True
+
+    N = 15000
+    epoches = 3
+    batch_size = 32
+    max_length = 80
+    num_workers = 1
     lr = 1e-3
 
     input_shape = (max_length, input_dim)
@@ -67,16 +72,22 @@ if __name__ == '__main__':
     #
 
     # get generator
-    x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))[0:N]
-    random.seed(1)
-    random.shuffle(x_paths)
+    x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))
+
+    print("Total: ", len(x_paths))
+    x_paths = x_paths[:N]
+
+
+    # random.seed(1) # TODO, add shuffle
+    # random.shuffle(x_paths)
+
     val_percent = 0.2
     val_index = int(N * 0.2)
     train_x_paths = x_paths[val_index:N]
     val_x_paths = x_paths[0:val_index]
 
-    train_generator = EnFraDataSet(train_x_paths, y_csv_path, input_shape, output_shape)
-    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape)
+    train_generator = EnFraDataSet(train_x_paths, y_csv_path, input_shape, output_shape, ignore_index)
+    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape, ignore_index)
 
     train_loader = DataLoader(train_generator,
                               batch_size=batch_size,
@@ -97,8 +108,8 @@ if __name__ == '__main__':
     #
 
     # start training
-    new_trainIters(train_loader, encoder1, attn_decoder1, epoches, step_size, EOS_token, SOS_token, learning_rate=lr,
-                   max_length=max_length, verbose=True)
+    new_trainIters(train_loader, encoder1, attn_decoder1, epoches, step_size, EOS_token, SOS_token, ignore_index,
+                   learning_rate=lr, max_length=max_length, verbose=True, use_teacher_forcing=use_teacher_forcing)
     print('training ok!')
     #
 
@@ -143,8 +154,6 @@ if __name__ == '__main__':
     print("val_loss: ", np.average(val_loss))
     print("val_rogue: ", np.average(rogues))
     print("val_bleu: ", np.average(bleus))
-
-
 
     # # ------------------------------------------------------------------------------------------------------------------
     # # manual test

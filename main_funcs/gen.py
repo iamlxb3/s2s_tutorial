@@ -7,11 +7,12 @@ import numpy as np
 
 
 class EnFraDataSet():
-    def __init__(self, X_paths, Y_csv_path, input_shape, output_shape):
+    def __init__(self, X_paths, Y_csv_path, input_shape, output_shape, ignore_index):
         self.Y_train = pd.read_csv(Y_csv_path).set_index('id').to_dict()['index'] # dictionary
         self.X_train = X_paths
         self.tensor_input_empty = torch.zeros(input_shape)
-        self.tensor_output_empty = torch.ones(output_shape).type(torch.LongTensor) * 30210 # TODO, change value
+        self.tensor_output_empty = torch.ones(output_shape).type(torch.LongTensor) * ignore_index # TODO, change value
+
 
     def __getitem__(self, index):
         x_path = self.X_train[index]

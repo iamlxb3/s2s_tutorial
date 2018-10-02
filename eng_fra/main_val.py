@@ -45,11 +45,12 @@ if __name__ == '__main__':
     Vocab_len = len(vocab)
     EOS_token = int(vocab.index('<EOS>'))
     SOS_token = int(vocab.index('<SOS>'))
+    ignore_index = 30212
 
     N = 20
     epoches = 1
     batch_size = 1
-    max_length = 20
+    max_length = 80
     num_workers = 1
     lr = 1e-3
 
@@ -67,7 +68,7 @@ if __name__ == '__main__':
     train_x_paths = x_paths[val_index:N]
     val_x_paths = x_paths[0:val_index]
 
-    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape)
+    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape,ignore_index=ignore_index)
     assert batch_size == 1
     val_loader = DataLoader(val_generator,
                             batch_size=batch_size,
@@ -97,22 +98,26 @@ if __name__ == '__main__':
 
         loss, decoded_words, target_words, attentions = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
                                                                  vocab, max_length=max_length, EOS_token=EOS_token)
-        # TODO, add language model
-        target_words = eval(y_df[(y_df.id == val_id)]['index'].values[0])
-        #
-        # # compute rogue & bleu
-        # rogue = rogue_compute(target_words, decoded_words)
-        # bleu = bleu_compute(target_words, decoded_words)
-        # #
-        #
-        # val_loss.append(loss)
-        # rogues.append(rogue)
-        # bleus.append(bleu)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)
         print("target_words: ", target_words)
         print("Decoded_words: ", decoded_words)
+
+        # TODO, add language model
+        #target_words = eval(y_df[(y_df.id == val_id)]['index'].values[0])
+        #
+
+        # compute rogue & bleu
+        rogue = rogue_compute(target_words, decoded_words)
+        bleu = bleu_compute(target_words, decoded_words)
+        #
+        #
+        val_loss.append(loss)
+        rogues.append(rogue)
+        bleus.append(bleu)
+
+
 
     print("val_loss: ", np.average(val_loss))
     print("val_rogue: ", np.average(rogues))

@@ -132,6 +132,7 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
 def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
               SOS_token, EOS_token, max_length, use_teacher_forcing=False):
 
+
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
@@ -148,11 +149,8 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
     # encoder_outputs : torch.Size([time_steps, batch_size, 256]),
     # encoder_hidden: torch.Size([num_layers * num_directions, batch_size, 256])
 
-    decoder_input = target_tensor.view(target_tensor.shape[1], target_tensor.shape[0], -1)
-
     # this is teacher forcing
     # decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, encoder_hidden, encoder_outputs)
-
 
     # TODO, add teacher forcing
     # Without teacher forcing: use its own predictions as the next input
@@ -160,7 +158,7 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
         if t == 0:
             decoder_hidden = encoder_hidden
-            decoder_input_t = torch.ones_like(decoder_input[t]) * SOS_token
+            decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * SOS_token).long()
 
         # input
         # decoder_input[t] : torch.Size([batch_size, 1])
@@ -179,23 +177,23 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
         print("t: {}, decoder_output: {}".format(t, decoder_output.topk(1)[1][0]))
 
         target_tensor_t = target_tensor[:, t, :]
+        #print("t {}: target_tensor_t: {}".format(t, target_tensor_t))
 
         # TODO, add attention
-
         loss += criterion(decoder_output, target_tensor_t.squeeze(1))
 
         if not use_teacher_forcing:
             _, topi = decoder_output.topk(1)
             decoder_input_t = topi.squeeze(0).detach()  # detach from history as input
         else:
-            decoder_input_t = decoder_input[t-1]
+            decoder_input_t = target_tensor_t
 
     loss.backward()
 
     encoder_optimizer.step()
     decoder_optimizer.step()
 
-    return loss.item() / target_length # TODO
+    return loss.item() / target_length  # TODO
 
 
 def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token,
@@ -223,22 +221,22 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token,
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
 
 
-def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token,
-                   learning_rate=0.01, max_length=None, verbose=False):
+def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token, ignore_index, 
+                   learning_rate=0.01, max_length=None, verbose=False, use_teacher_forcing=False):
     # encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     # decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
 
     encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
     decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
 
-    criterion = nn.NLLLoss()
+    criterion = nn.NLLLoss(ignore_index=ignore_index)
 
     for epoch in range(epoches):
         epoch_loss = 0
         for batch_index, (input_tensor, target_tensor) in enumerate(train_generator):
 
-            loss = new_train(input_tensor, target_tensor, encoder,
-                             decoder, encoder_optimizer, decoder_optimizer, criterion, SOS_token, EOS_token, max_length)
+            loss = new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer,
+                             criterion, SOS_token, EOS_token, max_length, use_teacher_forcing=use_teacher_forcing)
             epoch_loss += loss
 
             if verbose:
