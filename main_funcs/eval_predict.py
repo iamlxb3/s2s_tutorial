@@ -55,7 +55,7 @@ def _encode(encoder, src_tensors):
     return encoder_outputs, encoder_hidden
 
 
-def _decode(decoder, encoder_outputs, encoder_hidden, EOS_token, target_tensor=None):
+def _decode(decoder, encoder_outputs, encoder_hidden, EOS_token, target_tensor=None, teacher_forcing=False):
 
     max_length = len(target_tensor)
     # # decoding
@@ -83,11 +83,13 @@ def _decode(decoder, encoder_outputs, encoder_hidden, EOS_token, target_tensor=N
         decoder_attentions[t] = decoder_attention.data
         decoder_output = decoder_output.squeeze(0)
 
-        _, topi = decoder_output.topk(1)
-        decoder_input_t = topi.detach()  # detach from history as input
 
-        #decoder_input_t = target_tensor[t-1].unsqueeze(0)
-        #ipdb.set_trace()
+
+        if teacher_forcing:
+            decoder_input_t = target_tensor[t].unsqueeze(0)
+        else:
+            _, topi = decoder_output.topk(1)
+            decoder_input_t = topi.detach()  # detach from history as input
 
         decoded_outputs.append(decoder_output)
 

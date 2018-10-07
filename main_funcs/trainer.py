@@ -130,7 +130,7 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
 
 
 def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
-              SOS_token, EOS_token, max_length, use_teacher_forcing=False):
+              SOS_token, EOS_token, max_length, use_teacher_forcing=False, verbose=True):
 
 
     encoder_optimizer.zero_grad()
@@ -154,6 +154,10 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
     # TODO, add teacher forcing
     # Without teacher forcing: use its own predictions as the next input
+
+    if verbose:
+        decoded_outputs = []
+
     for t in range(target_length):
 
         if t == 0:
@@ -174,7 +178,10 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
         decoder_output = decoder_output.squeeze(0)
 
-        print("t: {}, decoder_output: {}".format(t, decoder_output.topk(1)[1][0]))
+        if verbose:
+            decoded_output_t = decoder_output.topk(1)[1][0]
+            #print("t: {}, decoder_output: {}".format(t, decoded_output_t))
+            decoded_outputs.append(int(decoded_output_t))
 
         target_tensor_t = target_tensor[:, t, :]
         #print("t {}: target_tensor_t: {}".format(t, target_tensor_t))
@@ -187,6 +194,21 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
             decoder_input_t = topi.squeeze(0).detach()  # detach from history as input
         else:
             decoder_input_t = target_tensor_t
+
+    if verbose:
+        print_target = [int(x) for x in target_tensor[0] if int(x) < 30212]
+
+        new_decoded_outputs = []
+        for x in decoded_outputs:
+            new_decoded_outputs.append(x)
+            if x == 30210:
+                break
+
+        print("\n--------------------------------------------")
+        print("decoded_outputs: ", new_decoded_outputs)
+        print("target_tensor: ", print_target)
+        print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
+
 
     loss.backward()
 
@@ -230,7 +252,7 @@ def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_to
     decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate, eps=1e-3, amsgrad=True)
 
     criterion = nn.NLLLoss(ignore_index=ignore_index)
-
+    epoch_losses = []
     for epoch in range(epoches):
         epoch_loss = 0
         for batch_index, (input_tensor, target_tensor) in enumerate(train_generator):
@@ -243,4 +265,7 @@ def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_to
                 print("Epoch-{} batch_index-{}/{} Loss: {}".format(epoch, batch_index, len(train_generator), loss))
 
         epoch_loss = epoch_loss / step_size
+        epoch_losses.append(epoch_loss)
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
+
+        print("epoch_losses: ", epoch_losses)

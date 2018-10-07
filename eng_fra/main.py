@@ -25,7 +25,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == '__main__':
     # model config
-    hidden_size = 256
+    load_model = True
+    hidden_size = 128
     encoder_nlayers = 1
     input_dim = 1024
     #
@@ -53,12 +54,12 @@ if __name__ == '__main__':
 
     use_teacher_forcing = True
 
-    N = 15000
-    epoches = 3
+    N = 1000
+    epoches = 500
     batch_size = 32
-    max_length = 80
+    max_length = 82
     num_workers = 1
-    lr = 1e-3
+    lr = 1e-2
 
     input_shape = (max_length, input_dim)
     output_shape = (max_length, 1)
@@ -66,9 +67,15 @@ if __name__ == '__main__':
     #
 
     # create model
-    encoder1 = EncoderRNN(input_dim, hidden_size, encoder_nlayers).to(device)
-    attn_decoder1 = AttnDecoderRNN(hidden_size, Vocab_len, dropout_p=0.1, max_length=max_length).to(device)
-    print('model initialization ok!')
+    if load_model:
+        encoder1 = torch.load(encoder_path).to(device)
+        print("Load encoder from {}.".format(encoder_path))
+        attn_decoder1 = torch.load(decoder_path).to(device)
+        print("Load decoder from {}.".format(decoder_path))
+    else:
+        encoder1 = EncoderRNN(input_dim, hidden_size, encoder_nlayers).to(device)
+        attn_decoder1 = AttnDecoderRNN(hidden_size, Vocab_len, dropout_p=0.1, max_length=max_length).to(device)
+        print('model initialization ok!')
     #
 
     # get generator
@@ -85,6 +92,11 @@ if __name__ == '__main__':
     val_index = int(N * 0.2)
     train_x_paths = x_paths[val_index:N]
     val_x_paths = x_paths[0:val_index]
+
+
+    # temp
+    print("train_x_paths: ", train_x_paths[0:10])
+    #
 
     train_generator = EnFraDataSet(train_x_paths, y_csv_path, input_shape, output_shape, ignore_index)
     val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape, ignore_index)
@@ -113,12 +125,13 @@ if __name__ == '__main__':
     print('training ok!')
     #
 
-    # save model
-    torch.save(encoder1, encoder_path)
-    print("Save encoder to {}.".format(encoder_path))
-    torch.save(attn_decoder1, decoder_path)
-    print("Save decoder to {}.".format(decoder_path))
-    #
+    if not load_model:
+        # save model
+        torch.save(encoder1, encoder_path)
+        print("Save encoder to {}.".format(encoder_path))
+        torch.save(attn_decoder1, decoder_path)
+        print("Save decoder to {}.".format(decoder_path))
+        #
 
     # TODO, add batch for validation
     sys.exit()

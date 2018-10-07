@@ -23,6 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == '__main__':
     # model config
+    use_train_data = True
     hidden_size = 256
     encoder_nlayers = 1
     input_dim = 1024
@@ -47,10 +48,10 @@ if __name__ == '__main__':
     SOS_token = int(vocab.index('<SOS>'))
     ignore_index = 30212
 
-    N = 20
+    N = 1000
     epoches = 1
     batch_size = 1
-    max_length = 80
+    max_length = 82
     num_workers = 1
     lr = 1e-3
 
@@ -61,12 +62,16 @@ if __name__ == '__main__':
 
     # get generator
     x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))[0:N]
-    random.seed(1)
-    random.shuffle(x_paths)
+    # random.seed(1)
+    # random.shuffle(x_paths)
     val_percent = 0.2
     val_index = int(N * 0.2)
     train_x_paths = x_paths[val_index:N]
     val_x_paths = x_paths[0:val_index]
+
+    if use_train_data:
+        val_x_paths = train_x_paths[0:10]
+        print("val_x_paths: ", val_x_paths)
 
     val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape,ignore_index=ignore_index)
     assert batch_size == 1
