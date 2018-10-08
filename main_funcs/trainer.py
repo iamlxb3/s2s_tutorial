@@ -131,8 +131,6 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
 
 def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
               SOS_token, EOS_token, max_length, use_teacher_forcing=False, verbose=True):
-
-
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
@@ -145,7 +143,7 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
     # input_tensor: torch.Size([batch_size, time_steps, feature_dim])
     # encoder_h0: torch.Size([num_layers * num_directions, batch_size, 256])
-    encoder_outputs, encoder_hidden = encoder(input_tensor, encoder_h0)
+    encoder_outputs, encoder_hidden = encoder(torch.transpose(input_tensor, 0, 1), encoder_h0)
     # encoder_outputs : torch.Size([time_steps, batch_size, 256]),
     # encoder_hidden: torch.Size([num_layers * num_directions, batch_size, 256])
 
@@ -180,11 +178,11 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
 
         if verbose:
             decoded_output_t = decoder_output.topk(1)[1][0]
-            #print("t: {}, decoder_output: {}".format(t, decoded_output_t))
+            # print("t: {}, decoder_output: {}".format(t, decoded_output_t))
             decoded_outputs.append(int(decoded_output_t))
 
         target_tensor_t = target_tensor[:, t, :]
-        #print("t {}: target_tensor_t: {}".format(t, target_tensor_t))
+        # print("t {}: target_tensor_t: {}".format(t, target_tensor_t))
 
         # TODO, add attention
         loss += criterion(decoder_output, target_tensor_t.squeeze(1))
@@ -208,7 +206,6 @@ def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, 
         print("decoded_outputs: ", new_decoded_outputs)
         print("target_tensor: ", print_target)
         print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
-
 
     loss.backward()
 
@@ -243,7 +240,7 @@ def trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token,
         print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
 
 
-def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token, ignore_index, 
+def new_trainIters(train_generator, encoder, decoder, epoches, step_size, EOS_token, SOS_token, ignore_index,
                    learning_rate=0.01, max_length=None, verbose=False, use_teacher_forcing=False):
     # encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     # decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)

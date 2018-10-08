@@ -16,7 +16,6 @@ class EncoderRNN(nn.Module):
         self.x_max_length = 150
 
     def forward(self, input, h0):
-        input = input.view(input.shape[1], input.shape[0], -1)
         output, hidden = self.gru(input, h0)
         return output, hidden
 

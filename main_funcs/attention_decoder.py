@@ -28,7 +28,7 @@ class AttnDecoderRNN(nn.Module):
 
     def forward(self, input, hidden, encoder_outputs):
         embedded = self.embedding(input)
-        embedded = embedded.view(embedded.shape[1], embedded.shape[0], -1)
+        embedded = torch.transpose(embedded, 0, 1)
         embedded = self.dropout(embedded)
 
         decoder_input_conca = torch.cat((embedded, hidden), 2)

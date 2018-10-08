@@ -25,7 +25,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if __name__ == '__main__':
     # model config
-    load_model = True
+    load_model = False
     hidden_size = 128
     encoder_nlayers = 1
     input_dim = 1024
