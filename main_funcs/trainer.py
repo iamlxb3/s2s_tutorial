@@ -131,29 +131,59 @@ def train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, deco
 
 def new_train(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion,
               SOS_token, EOS_token, max_length, use_teacher_forcing=False, verbose=True):
+    """
+    Train for each batch
 
+    """
 
+    # initialize
+    batch_size = input_tensor.shape[0]
+    target_length = target_tensor.size(1)  # torch.Size([9, 1])
+    loss = 0
+    encoder_h0 = encoder.initHidden(batch_size)
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
+    #
 
-    batch_size = input_tensor.size(0)
-    target_length = target_tensor.size(1)  # torch.Size([9, 1])
+    # get the length of sequence for each sample
+    seq_lens = []
+    indices = []
+    for batch_i in range(batch_size):
+        seq_len = [float(sum(x)) for x in input_tensor[batch_i]]
+        seq_len = len([x for x in seq_len if x != 0.0])
+        seq_lens.append(seq_len)
+        indices.append(batch_i)
+    #
 
-    loss = 0
 
-    encoder_h0 = encoder.initHidden(batch_size)
+    # sort by decreasing order
+    input_tensor_len = sorted(list(zip(input_tensor, seq_lens, indices)), key=lambda x:x[1], reverse=True)
+    input_tensor = torch.cat([x[0].view(1, x[0].size(0), -1) for x in input_tensor_len], 0)
+    sorted_seq_lens = [x[1] for x in input_tensor_len]
+    sorted_indices = [x[2] for x in input_tensor_len]
+    #
+
+
+    # pack padded sequences
+    input_tensor = torch.transpose(input_tensor, 0, 1)
+    input_tensor = nn.utils.rnn.pack_padded_sequence(input_tensor, lengths=sorted_seq_lens)
+    #
+
 
     # input_tensor: torch.Size([batch_size, time_steps, feature_dim])
     # encoder_h0: torch.Size([num_layers * num_directions, batch_size, 256])
     encoder_outputs, encoder_hidden = encoder(input_tensor, encoder_h0)
+    encoder_outputs = nn.utils.rnn.pad_packed_sequence(encoder_outputs)[0] # 0 -> tensor, 1 ->
+    # length tensor([ 13,  11,  11,   8,   6,   6,   5,   4])
+    encoder_outputs = encoder_outputs.index_select(1, torch.tensor(sorted_indices)) # recover indices
     # encoder_outputs : torch.Size([time_steps, batch_size, 256]),
     # encoder_hidden: torch.Size([num_layers * num_directions, batch_size, 256])
 
-    # this is teacher forcing
-    # decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input, encoder_hidden, encoder_outputs)
-
-    # TODO, add teacher forcing
-    # Without teacher forcing: use its own predictions as the next input
+    # padding after encoding TODO, modify in the future
+    new = torch.zeros((target_length, encoder_outputs.size(1), encoder_outputs.size(2)))
+    new[:encoder_outputs.size(0)] = encoder_outputs
+    encoder_outputs = new
+    #
 
     if verbose:
         decoded_outputs = []

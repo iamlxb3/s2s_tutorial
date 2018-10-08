@@ -21,7 +21,6 @@ class EnFraDataSet():
         tensor_input = self.tensor_input_empty.clone() # TODO, better way than clone?
         tensor_input_temp = torch.load(x_path).float()
         tensor_input_temp = torch.from_numpy(tensor_input_temp.detach().numpy())
-
         # padding
 
         # #####################################################
