@@ -19,7 +19,8 @@ from main_funcs.eval_predict import evaluate
 from main_funcs.eval_predict import bleu_compute
 from main_funcs.eval_predict import rogue_compute
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 if __name__ == '__main__':
     # model config

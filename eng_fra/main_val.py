@@ -19,14 +19,14 @@ from main_funcs.eval_predict import rogue_compute
 from torch.utils.data import DataLoader
 import re
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cpu')
 
-if __name__ == '__main__':
+
+def main():
     # model config
     use_train_data = True
-    hidden_size = 256
-    encoder_nlayers = 1
-    input_dim = 1024
+    input_dim = 300
+    teacher_forcing = False
     #
 
     # set path
@@ -41,19 +41,17 @@ if __name__ == '__main__':
     decoder_path = os.path.join(pkl_dir, '{}_decoder.pkl'.format(data_set))
     #
 
-    # training config
+    # validation config
     vocab = pickle.load(open(vocab_path, 'rb'))
     Vocab_len = len(vocab)
-    EOS_token = int(vocab.index('<EOS>'))
-    SOS_token = int(vocab.index('<SOS>'))
-    ignore_index = 30212
+    EOS_index = int(vocab.index('<EOS>'))
+    SOS_index = int(vocab.index('<SOS>'))
+    ignore_index = Vocab_len
 
-    N = 1000
-    epoches = 1
+    N = 50
     batch_size = 1
     max_length = 82
     num_workers = 1
-    lr = 1e-3
 
     input_shape = (max_length, input_dim)
     output_shape = (max_length, 1)
@@ -73,7 +71,7 @@ if __name__ == '__main__':
         val_x_paths = train_x_paths[0:10]
         print("val_x_paths: ", val_x_paths)
 
-    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape,ignore_index=ignore_index)
+    val_generator = EnFraDataSet(val_x_paths, y_csv_path, input_shape, output_shape, ignore_index=ignore_index)
     assert batch_size == 1
     val_loader = DataLoader(val_generator,
                             batch_size=batch_size,
@@ -82,9 +80,8 @@ if __name__ == '__main__':
                             # pin_memory=True
                             )
 
-
     # save model
-    encoder1 = torch.load( encoder_path).to(device)
+    encoder1 = torch.load(encoder_path).to(device)
     print("Load encoder from {}.".format(encoder_path))
     attn_decoder1 = torch.load(decoder_path).to(device)
     print("Load decoder from {}.".format(decoder_path))
@@ -96,13 +93,14 @@ if __name__ == '__main__':
     rogues = []
     bleus = []
 
-    for i, (src_tensor, target_tensor) in enumerate(val_generator):
+    for i, (src_tensor, target_tensor) in enumerate(val_loader):
         val_id = int(re.findall(r'x_([0-9]+).pt', val_x_paths[i])[0])
 
-        print("target_tensor: ", target_tensor)
+        #print("target_tensor: ", target_tensor)
 
-        loss, decoded_words, target_words, attentions = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
-                                                                 vocab, max_length=max_length, EOS_token=EOS_token)
+        loss, decoded_words, target_words = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
+                                                                 vocab, device, SOS_index, ignore_index, EOS_token=EOS_index,
+                                                                 teacher_forcing=teacher_forcing)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)
@@ -110,7 +108,7 @@ if __name__ == '__main__':
         print("Decoded_words: ", decoded_words)
 
         # TODO, add language model
-        #target_words = eval(y_df[(y_df.id == val_id)]['index'].values[0])
+        # target_words = eval(y_df[(y_df.id == val_id)]['index'].values[0])
         #
 
         # compute rogue & bleu
@@ -122,13 +120,9 @@ if __name__ == '__main__':
         rogues.append(rogue)
         bleus.append(bleu)
 
-
-
     print("val_loss: ", np.average(val_loss))
     print("val_rogue: ", np.average(rogues))
     print("val_bleu: ", np.average(bleus))
-
-
 
     # # ------------------------------------------------------------------------------------------------------------------
     # # manual test
@@ -143,3 +137,7 @@ if __name__ == '__main__':
     # src_tensors = sentence_to_tensor(src_sentence, elmo, batch_to_ids)
     # target_tensors = french_sentence_to_int_tensors(target_sentence, vocab)
     # # ------------------------------------------------------------------------------------------------------------------
+
+
+if __name__ == '__main__':
+    main()

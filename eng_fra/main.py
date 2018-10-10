@@ -7,7 +7,7 @@ import os
 import pickle
 import sys
 import pandas as pd
-
+import argparse
 sys.path.append("..")
 
 from main_funcs.rnn_encoder import EncoderRNN
@@ -21,14 +21,26 @@ from main_funcs.eval_predict import bleu_compute
 from main_funcs.eval_predict import rogue_compute
 from torch.utils.data import DataLoader
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+
+
+def args_parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--load_model', action="store_true", help='Epoch size', default=False)
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == '__main__':
+
+    # TODO, add parsing
+
     # model config
     load_model = False
-    hidden_size = 128
+    hidden_size = 256
     encoder_nlayers = 1
-    input_dim = 1024
+    input_dim = 300
     #
 
     # set path
@@ -46,20 +58,21 @@ if __name__ == '__main__':
     # training config
     vocab = pickle.load(open(vocab_path, 'rb'))
     Vocab_len = len(vocab)
-    EOS_token = int(vocab.index('<EOS>'))
-    SOS_token = int(vocab.index('<SOS>'))
-    ignore_index = 30212
+    EOS_index = int(vocab.index('<EOS>'))
+    SOS_index = int(vocab.index('<SOS>'))
+    ignore_index = Vocab_len
 
-    print("EOS_token: {}, SOS_token: {}".format(EOS_token, SOS_token))
+    print("Vocab size: {}, ignore_index: {}".format(Vocab_len, ignore_index))
+    print("EOS_index: {}, SOS_index: {}".format(EOS_index, SOS_index))
 
     use_teacher_forcing = True
 
-    N = 1000
-    epoches = 500
-    batch_size = 32
-    max_length = 82
-    num_workers = 1
-    lr = 1e-2
+    N = 50000
+    epoches = 20
+    batch_size = 128
+    max_length = 52
+    num_workers = 8
+    lr = 1e-3
 
     input_shape = (max_length, input_dim)
     output_shape = (max_length, 1)
@@ -120,8 +133,8 @@ if __name__ == '__main__':
     #
 
     # start training
-    new_trainIters(train_loader, encoder1, attn_decoder1, epoches, step_size, EOS_token, SOS_token, ignore_index,
-                   learning_rate=lr, max_length=max_length, verbose=True, use_teacher_forcing=use_teacher_forcing)
+    new_trainIters(train_loader, encoder1, attn_decoder1, epoches, step_size, EOS_index, SOS_index, ignore_index,
+                   learning_rate=lr, verbose=True, use_teacher_forcing=use_teacher_forcing, device=device)
     print('training ok!')
     #
 
@@ -146,7 +159,7 @@ if __name__ == '__main__':
         val_id = int(re.findall(r'x_([0-9]+).pt', val_x_paths[i])[0])
 
         loss, decoded_words, target_words, attentions = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
-                                                                 vocab, max_length=max_length, SOS_token=SOS_token)
+                                                                 vocab, max_length=max_length, SOS_token=SOS_index)
         # TODO, add language model
 
         target_words = eval(y_df[(y_df.id == id)]['title'].values[0])
