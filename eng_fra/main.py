@@ -67,10 +67,10 @@ if __name__ == '__main__':
 
     use_teacher_forcing = True
 
-    N = 50000
+    N = 500
     epoches = 20
-    batch_size = 128
-    max_length = 52
+    batch_size = 4
+    max_length = 82
     num_workers = 8
     lr = 1e-3
 
@@ -91,6 +91,11 @@ if __name__ == '__main__':
         print('model initialization ok!')
     #
 
+    # eval
+    encoder1.eval()
+    attn_decoder1.eval()
+    #
+
     # get generator
     x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))
 
@@ -98,8 +103,8 @@ if __name__ == '__main__':
     x_paths = x_paths[:N]
 
 
-    # random.seed(1) # TODO, add shuffle
-    # random.shuffle(x_paths)
+    random.seed(1) # TODO, add shuffle
+    random.shuffle(x_paths)
 
     val_percent = 0.2
     val_index = int(N * 0.2)

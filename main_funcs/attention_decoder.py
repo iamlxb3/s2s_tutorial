@@ -19,7 +19,7 @@ class AttnDecoderRNN(nn.Module):
         self.n_layers = n_layers
         self.decoder_dim = self.hidden_size # TODO, fix
         self.embedding = nn.Embedding(self.output_size + 1, self.hidden_size)  # TODO, add to vocab
-        self.attn = nn.Linear(self.hidden_size + self.decoder_dim, 1)
+        self.attn = nn.Linear(self.hidden_size + self.decoder_dim, self.hidden_size)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(self.dropout_p)
         self.gru = nn.GRU(self.hidden_size, self.hidden_size, self.n_layers)
@@ -42,20 +42,24 @@ class AttnDecoderRNN(nn.Module):
 
         attn_weights = []
         #print("---------------------")
+        # TODO, get rid of for loop
         for pos, encoder_output_t in enumerate(encoder_outputs):
             # encoder_output_t : torch.Size([batch_size, feature_dim])
-            encoder_o_t_decoder_i = torch.cat((hidden,  encoder_output_t.view(1, encoder_output_t.size(0), -1)), 2)
+            encoder_o_t_decoder_i = torch.cat((decoder_y_input, encoder_output_t.view(1, encoder_output_t.size(0), -1))
+                                              , 2)
             #attn_weight = F.softmax(self.attn(encoder_o_t_decoder_i), dim=2)  # torch.Size([1, batch_size, 1])
             attn_weight = self.attn(encoder_o_t_decoder_i) # torch.Size([1, batch_size, 1])
-            attn_weights.append(attn_weight)
+            attn_weight = torch.sum(attn_weight * decoder_y_input, dim=2).unsqueeze(2)
+            attn_weights.append(attn_weight) # attn_weight: torch.Size([1, batch_size, 1])
 
             # if pos == 0:
             #     print("pos-{}, attn_weight-{}".format(pos, attn_weight))
-            # #     print("hidden: {}, encoder_output_t: {}, attn_weight: {}"
-            #           .format(hidden[:,:,:10],encoder_output_t[:,:10], float(attn_weight)))
-            #print("encoder_o_t_decoder_i: {}, attn_weight: {}".format(torch.sum(encoder_o_t_decoder_i), torch.sum(attn_weight)))
+            #     print("decoder_y_input: {}, encoder_output_t: {}, attn_weight: {}"
+            #           .format(decoder_y_input[:,:,:10],encoder_output_t[:,:10], float(attn_weight)))
+            # print("encoder_o_t_decoder_i: {}, attn_weight: {}".format(torch.sum(encoder_o_t_decoder_i), torch.sum(attn_weight)))
 
-        attn_weights = torch.cat(attn_weights, 0)
+        attn_weights = torch.cat(attn_weights, 0) # torch.Size([seq_length, batch_size, 1])
+
         attn_weights = F.softmax(attn_weights, 0) # TODO
 
         # >> > batch1 = torch.randn(10, 3, 4)
@@ -64,7 +68,6 @@ class AttnDecoderRNN(nn.Module):
         # >> > res.size()
         # torch.Size([10, 3, 5])
 
-        #ipdb.set_trace()
 
         context_vector = torch.bmm(attn_weights.permute(1, 2, 0), encoder_outputs.permute(1, 0, 2))  # torch.Size([batch_size, 1, feature_dim])
         context_vector = context_vector.permute(1, 0, 2)
