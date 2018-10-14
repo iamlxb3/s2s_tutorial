@@ -33,8 +33,8 @@ class EnFraDataSet():
         #
 
         # get tensor_output
-        id = int(re.findall(r'x_([0-9]+).pt', x_path)[0])
-        y_indexes = self.Y_train[id].split(',')
+        uid = int(re.findall(r'x_([0-9]+).pt', x_path)[0])
+        y_indexes = self.Y_train[uid].split(',')
         tensor_output_temp = np.zeros((len(y_indexes), 1))
         for i, y_index in enumerate(y_indexes):
             tensor_output_temp[i] = int(y_index)
@@ -44,7 +44,7 @@ class EnFraDataSet():
         tensor_output[:tensor_output_temp.shape[0]] = tensor_output_temp
         #
 
-        return tensor_input, tensor_output
+        return tensor_input, tensor_output, uid
 
     def __len__(self):
         return len(self.X_train)

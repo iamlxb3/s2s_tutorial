@@ -83,7 +83,8 @@ def _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, EOS_token, targ
         # ipdb > decoder_input_t
         # tensor([[30211]])
 
-        decoder_output, decoder_hidden, decoder_attention = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
+        decoder_output, decoder_hidden, decoder_attention, context_vector\
+            = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
         #decoder_attentions[t] = decoder_attention.data
         decoder_output = decoder_output.squeeze(0)
 

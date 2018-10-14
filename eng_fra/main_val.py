@@ -48,7 +48,7 @@ def main():
     SOS_index = int(vocab.index('<SOS>'))
     ignore_index = Vocab_len
 
-    N = 50
+    N = 100
     batch_size = 1
     max_length = 82
     num_workers = 1
@@ -60,8 +60,8 @@ def main():
 
     # get generator
     x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))[0:N]
-    # random.seed(1)
-    # random.shuffle(x_paths)
+    random.seed(1)
+    random.shuffle(x_paths)
     val_percent = 0.2
     val_index = int(N * 0.2)
     train_x_paths = x_paths[val_index:N]
@@ -93,7 +93,7 @@ def main():
     rogues = []
     bleus = []
 
-    for i, (src_tensor, target_tensor) in enumerate(val_loader):
+    for i, (src_tensor, target_tensor, uid) in enumerate(val_loader):
         val_id = int(re.findall(r'x_([0-9]+).pt', val_x_paths[i])[0])
 
         #print("target_tensor: ", target_tensor)
