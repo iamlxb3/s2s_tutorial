@@ -1,6 +1,9 @@
-git clone https://www.github.com/farizrahman4u/recurrentshop.git
-cd recurrentshop
-python setup.py install
-pip install git+https://github.com/farizrahman4u/seq2seq.git (安装keras sqs)
+目前还是在eng_fra数据集上做调试
 
+训练模型
+cd eng_fra
+python main.py
 
+验证模型
+cd eng_fra
+python main.py
