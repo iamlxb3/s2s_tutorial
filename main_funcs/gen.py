@@ -7,49 +7,39 @@ import numpy as np
 
 
 class EnFraDataSet():
-    def __init__(self, X_paths, Y_csv_path, input_shape, output_shape, ignore_index):
-        self.Y_train = pd.read_csv(Y_csv_path).set_index('id').to_dict()['index'] # dictionary
-        self.X_train = X_paths
-        self.tensor_input_empty = torch.zeros(input_shape)
-        self.tensor_output_empty = torch.ones(output_shape).type(torch.LongTensor) * ignore_index # TODO, change value
+    def __init__(self, seq_csv_path, x_pad_shape, y_pad_shape, src_pad_token, target_pad_token,
+                 use_pretrain_embedding):
+        self.Y_train = pd.read_csv(seq_csv_path)['target'].values
+        self.X_train = pd.read_csv(seq_csv_path)['source'].values
+        self.uids = pd.read_csv(seq_csv_path)['uid'].values
+        self.x_all_padding = torch.ones(x_pad_shape).type(torch.LongTensor) * src_pad_token
+        self.y_all_padding = torch.ones(y_pad_shape).type(torch.LongTensor) * target_pad_token
+        self.use_pretrain_embedding = use_pretrain_embedding
 
+    def _pad_seq(self, seq_array, all_padding_seq):
+        if len(seq_array.shape) == 1:
+            seq_array = np.expand_dims(seq_array, axis=1)
+        seq_temp = torch.from_numpy(seq_array).type(torch.LongTensor)
+        seq = all_padding_seq.clone()
+        seq[: seq_temp.shape[0]] = seq_temp
+        return seq
 
     def __getitem__(self, index):
-        x_path = self.X_train[index]
-
-        # get tensor_input
-        tensor_input = self.tensor_input_empty.clone() # TODO, better way than clone?
-        tensor_input_temp = torch.load(x_path).float()
-        tensor_input_temp = torch.from_numpy(tensor_input_temp.detach().numpy())
-        # padding
-
-        # #####################################################
-        # another way of padding
-        # seq = torch.Tensor([1, 2, 3])  # seq of variable length
-        # print(F.pad(seq, pad=(0, 2), mode='constant', value=0))
-        # #####################################################
-
-        tensor_input[:tensor_input_temp.shape[0]] = tensor_input_temp
-        #
-
+        """
+        :return: x: torch.Size([max_padding_len, 1]), y: torch.Size([max_padding_len, 1])
+        """
         # get tensor_output
-        uid = int(re.findall(r'x_([0-9]+).pt', x_path)[0])
-        y_indexes = self.Y_train[uid].split(',')
-        tensor_output_temp = np.zeros((len(y_indexes), 1))
-        for i, y_index in enumerate(y_indexes):
-            tensor_output_temp[i] = int(y_index)
-        tensor_output_temp = torch.from_numpy(tensor_output_temp)
-        tensor_output_temp = tensor_output_temp.type(torch.LongTensor)
-        tensor_output = self.tensor_output_empty.clone()
-        tensor_output[:tensor_output_temp.shape[0]] = tensor_output_temp
-        #
+        uid = self.uids[index]
+        x_indices = np.array([int(x) for x in self.X_train[index].split(',')])
+        y_indices = np.array([int(y) for y in self.Y_train[index].split(',')])
 
-        return tensor_input, tensor_output, uid
+        x = self._pad_seq(x_indices, self.x_all_padding)
+        y = self._pad_seq(y_indices, self.y_all_padding)
+
+        return x, y, uid
 
     def __len__(self):
         return len(self.X_train)
-
-
 
 
 def torch_random_train_gen(X_paths, Y_csv_path, index_name='w_index'):
@@ -76,10 +66,12 @@ def torch_random_train_gen(X_paths, Y_csv_path, index_name='w_index'):
         # tensor_output = tensor_output.type(torch.LongTensor)
         yield (tensor_input, tensor_output)
 
+
 def torch_test_gen(X_paths):
     for x_path in X_paths:
         tensor_input = torch.load(x_path)
         yield tensor_input
+
 
 def torch_val_gen(X_paths, Y_csv_path, index_name='w_index'):
     # get y_dict
@@ -103,7 +95,6 @@ def torch_val_gen(X_paths, Y_csv_path, index_name='w_index'):
         # tensor_output = tensor_output.type(torch.LongTensor)
 
         yield (tensor_input, tensor_output, id)
-
 
 # def train_gen():
 #     training_pairs = []

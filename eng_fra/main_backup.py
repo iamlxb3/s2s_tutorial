@@ -10,7 +10,7 @@ import pandas as pd
 import argparse
 sys.path.append("..")
 
-from main_funcs.rnn_encoder import EncoderRNN
+from main_funcs.rnn_encoder import EncoderGru
 from main_funcs.attention_decoder import AttnDecoderRNN
 from main_funcs.trainer import epoches_train
 from main_funcs.gen import torch_random_train_gen
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         attn_decoder1 = torch.load(decoder_path).to(device)
         print("Load decoder from {}.".format(decoder_path))
     else:
-        encoder1 = EncoderRNN(input_dim, hidden_size, encoder_nlayers).to(device)
+        encoder1 = EncoderGru(input_dim, hidden_size, encoder_nlayers).to(device)
         attn_decoder1 = AttnDecoderRNN(hidden_size, Vocab_len, dropout_p=0.1, max_length=max_length).to(device)
         print('model initialization ok!')
     #

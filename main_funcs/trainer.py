@@ -202,3 +202,166 @@ def epoches_train(train_generator, encoder, decoder, epoches, step_size, EOS_tok
         # TODO, analysis attention at the last epoch
         print(attention_recoder)
         #
+
+
+def epoches_train2(config, train_generator, encoder, decoder):
+    # device
+    device = config.device
+
+    # set optimizer
+    encoder_optimizer = config.encoder_optimizer
+    decoder_optimizer = config.decoder_optimizer
+
+    # set criterion
+    criterion = config.criterion
+
+    epoch_losses = []  # TODO, temp track loss
+
+    # add attention-recoder
+    for epoch in range(config.epoches):
+
+        epoch_loss = 0
+        for batch_index, (input_tensor, target_tensor, uid) in enumerate(train_generator):
+            input_tensor = input_tensor.to(device)
+            target_tensor = target_tensor.to(device)
+
+            loss = train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder,
+                                                              encoder_optimizer,
+                                                              decoder_optimizer,
+                                                              criterion,
+                                                              use_teacher_forcing=config.use_teacher_forcing,
+                                                              src_pad_token=config.src_pad_token,
+                                                              target_SOS_token=config.target_SOS_token,
+                                                              target_EOS_index=config.target_EOS_token,
+                                                              target_pad_token=config.target_pad_token, device=device)
+
+            epoch_loss += loss
+
+            if config.verbose:
+                print("Epoch-{} batch_index-{}/{} Loss: {}".format(epoch, batch_index, len(train_generator), loss))
+
+        epoch_loss = epoch_loss / config.step_size
+        epoch_losses.append(epoch_loss)
+        print("Epoch: {}, loss: {}".format(epoch, epoch_loss))
+        print("epoch_losses: ", epoch_losses)
+
+
+def _actual_seq_length_compute(input_tensor, batch_size, src_pad_token):
+    seq_lens = []
+    indices = []
+    for batch_i in range(batch_size):
+        seq_len = input_tensor[0].squeeze(1)
+        seq_len = len([x for x in seq_len if x != src_pad_token])
+        seq_lens.append(seq_len)
+        indices.append(batch_i)
+    #
+    return seq_lens, indices
+
+def _sort_batch_seq(input_tensor, batch_size, src_pad_token):
+
+    # get the actual length of sequence for each sample
+    src_seq_lens, src_seq_indices = _actual_seq_length_compute(input_tensor, batch_size, src_pad_token)
+    #
+
+    # sort by decreasing order
+    input_tensor_len = sorted(list(zip(input_tensor, src_seq_lens, src_seq_indices)), key=lambda x: x[1], reverse=True)
+    input_tensor = torch.cat([x[0].view(1, x[0].size(0), -1) for x in input_tensor_len], 0)
+    sorted_seq_lens = [x[1] for x in input_tensor_len]
+    sorted_indices = [x[2] for x in input_tensor_len]
+    #
+    return input_tensor, sorted_seq_lens, sorted_indices
+
+def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer,
+                            criterion,
+                            verbose=True,
+                            device=None,
+                            use_teacher_forcing=False,
+                            target_pad_token=None,
+                            src_pad_token=None,
+                            target_SOS_token=None,
+                            target_EOS_index=None):
+    """
+
+    :param input_tensor: torch.Size([batch_size, max_padding_len, 1])
+    :param target_tensor: torch.Size([batch_size, max_padding_len, 1])
+    :param target_pad_token: int
+    :param target_SOS_token: int
+    :param target_EOS_index: int
+    """
+
+    # initialize
+    batch_size = input_tensor.shape[0]
+    target_length = target_tensor.size(1)  # torch.Size([9, 1])
+    loss = 0
+    encoder_h0 = encoder.initHidden(batch_size, device)
+    encoder_optimizer.zero_grad()
+    decoder_optimizer.zero_grad()
+    #
+
+    # get the actual length of sequence for each sample, sort by decreasing order
+    input_tensor, sorted_seq_lens, sorted_indices = _sort_batch_seq(input_tensor, batch_size, src_pad_token)
+    input_tensor = torch.transpose(input_tensor, 0, 1) # transpose, batch second
+    #
+
+    # encode
+    encoder_outputs, encoder_hidden = encoder(input_tensor, sorted_seq_lens, sorted_indices, encoder_h0)
+    #
+
+    if verbose:
+        decoded_outputs = []
+
+    for t in range(target_length):
+
+        if t == 0:
+            decoder_hidden = encoder_hidden
+            decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * target_SOS_token).long().to(device)
+
+        # input
+        # decoder_input_t : torch.Size([batch_size, 1])
+        # decoder_hidden : torch.Size([layer*direction_num, batch_size, feature_dim])
+        # encoder_outputs : torch.Size([decoder_length, batch_size, feature_dim])
+
+        # output
+        # decoder_output : torch.Size([1, batch_size, Vocab_size])
+
+        decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
+
+        decoder_output = decoder_output.squeeze(0)
+
+        if verbose:
+            decoded_output_t = decoder_output.topk(1)[1][0]
+            # print("t: {}, decoder_output: {}".format(t, decoded_output_t))
+            decoded_outputs.append(int(decoded_output_t))
+
+        target_tensor_t = target_tensor[:, t, :]
+        # print("t {}: target_tensor_t: {}".format(t, target_tensor_t))
+
+        # TODO, add attention
+        loss += criterion(decoder_output, target_tensor_t.squeeze(1))
+
+        if not use_teacher_forcing:
+            _, topi = decoder_output.topk(1)
+            decoder_input_t = topi.squeeze(0).detach()  # detach from history as input
+        else:
+            decoder_input_t = target_tensor_t
+
+
+    # if verbose:
+    #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
+    #     new_decoded_outputs = []
+    #     for x in decoded_outputs:
+    #         new_decoded_outputs.append(x)
+    #         if x == target_EOS_index:
+    #             break
+    #
+    #     print("\n--------------------------------------------")
+    #     print("decoded_outputs: ", new_decoded_outputs)
+    #     print("target_tensor: ", print_target)
+    #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
+
+    loss.backward()
+
+    encoder_optimizer.step()
+    decoder_optimizer.step()
+
+    return loss.item() / target_length

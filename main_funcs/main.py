@@ -1,4 +1,4 @@
-from rnn_encoder import EncoderRNN
+from rnn_encoder import EncoderGru
 from attention_decoder import AttnDecoderRNN
 from trainer import trainIters
 import numpy as np
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     #
 
     # create model
-    encoder1 = EncoderRNN(input_dim, hidden_size, encoder_nlayers).to(device)
+    encoder1 = EncoderGru(input_dim, hidden_size, encoder_nlayers).to(device)
     attn_decoder1 = AttnDecoderRNN(hidden_size, Vocab_len, dropout_p=0.1, max_length=Y_max_length).to(device)
     print('model initialization ok!')
     #

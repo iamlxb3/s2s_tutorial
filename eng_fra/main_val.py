@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.append("..")
 
-from main_funcs.rnn_encoder import EncoderRNN
+from main_funcs.rnn_encoder import EncoderGru
 from main_funcs.attention_decoder import AttnDecoderRNN
 from main_funcs.gen import EnFraDataSet
 from main_funcs.eval_predict import evaluate
