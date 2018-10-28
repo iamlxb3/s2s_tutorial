@@ -16,7 +16,7 @@ from main_funcs.trainer import epoches_train
 from main_funcs.gen import torch_random_train_gen
 from main_funcs.gen import torch_val_gen
 from main_funcs.gen import EnFraDataSet
-from main_funcs.eval_predict import evaluate
+from main_funcs.eval_predict import eval_on_val
 from main_funcs.eval_predict import bleu_compute
 from main_funcs.eval_predict import rogue_compute
 from torch.utils.data import DataLoader

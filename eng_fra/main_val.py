@@ -13,7 +13,7 @@ sys.path.append("..")
 from main_funcs.rnn_encoder import EncoderGru
 from main_funcs.attention_decoder import AttnDecoderRNN
 from main_funcs.gen import EnFraDataSet
-from main_funcs.eval_predict import evaluate
+from main_funcs.eval_predict import eval_on_val
 from main_funcs.eval_predict import bleu_compute
 from main_funcs.eval_predict import rogue_compute
 from torch.utils.data import DataLoader
@@ -98,9 +98,9 @@ def main():
 
         #print("target_tensor: ", target_tensor)
 
-        loss, decoded_words, target_words = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
-                                                                 vocab, device, SOS_index, ignore_index, EOS_token=EOS_index,
-                                                                 teacher_forcing=teacher_forcing)
+        loss, decoded_words, target_words = eval_on_val(encoder1, attn_decoder1, src_tensor, target_tensor,
+                                                        vocab, device, SOS_index, ignore_index, EOS_token=EOS_index,
+                                                        teacher_forcing=teacher_forcing)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)

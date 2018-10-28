@@ -14,8 +14,7 @@ class DecoderRnn(nn.Module):
 
     def forward(self, yt, ht):
         """
-
-        :param yt: torch.Size([1, batch_size, feature_dim])
+        :param yt: torch.Size([batch_size, feature_dim])
         :param ht: torch.Size([1, batch_size, feature_dim])
         :return:
         output: torch.Size([1, batch_size, vocab_size])

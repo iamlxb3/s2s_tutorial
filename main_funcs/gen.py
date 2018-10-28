@@ -7,11 +7,11 @@ import numpy as np
 
 
 class EnFraDataSet():
-    def __init__(self, seq_csv_path, x_pad_shape, y_pad_shape, src_pad_token, target_pad_token,
+    def __init__(self, X, Y, uids, x_pad_shape, y_pad_shape, src_pad_token, target_pad_token,
                  use_pretrain_embedding):
-        self.Y_train = pd.read_csv(seq_csv_path)['target'].values
-        self.X_train = pd.read_csv(seq_csv_path)['source'].values
-        self.uids = pd.read_csv(seq_csv_path)['uid'].values
+        self.X_train = X
+        self.Y_train = Y
+        self.uids = uids
         self.x_all_padding = torch.ones(x_pad_shape).type(torch.LongTensor) * src_pad_token
         self.y_all_padding = torch.ones(y_pad_shape).type(torch.LongTensor) * target_pad_token
         self.use_pretrain_embedding = use_pretrain_embedding

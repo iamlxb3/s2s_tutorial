@@ -15,7 +15,7 @@ from main_funcs.attention_decoder import AttnDecoderRNN
 from main_funcs.trainer import trainIters
 from main_funcs.gen import torch_random_train_gen
 from main_funcs.gen import torch_val_gen
-from main_funcs.eval_predict import evaluate
+from main_funcs.eval_predict import eval_on_val
 from main_funcs.eval_predict import bleu_compute
 from main_funcs.eval_predict import rogue_compute
 
@@ -87,8 +87,8 @@ if __name__ == '__main__':
     rogues = []
     bleus = []
     for src_tensor, target_tensor, id in val_generator:
-        loss, decoded_words, target_words, attentions = evaluate(encoder1, attn_decoder1, src_tensor, target_tensor,
-                                                                 vocab, max_length=max_length, SOS_token=SOS_token)
+        loss, decoded_words, target_words, attentions = eval_on_val(encoder1, attn_decoder1, src_tensor, target_tensor,
+                                                                    vocab, max_length=max_length, target_SOS_token=SOS_token)
         # TODO, add language model
 
 

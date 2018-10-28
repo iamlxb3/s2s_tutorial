@@ -7,3 +7,7 @@ python main.py
 验证模型
 cd eng_fra
 python main.py
+
+
+# reference
+https://github.com/IBM/pytorch-seq2seq/blob/master/seq2seq/models/DecoderRNN.py

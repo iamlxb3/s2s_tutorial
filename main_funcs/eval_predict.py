@@ -7,7 +7,12 @@ import torch
 import ipdb
 import math
 import nltk
+
 import sys
+
+sys.path.append('..')
+from utils.helpers import _sort_batch_seq
+
 from .lcs import lcsubstring_length
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,80 +34,54 @@ def rogue_compute(reference, summary):
     lcs_recall = lcs_len / len(reference)
     lcs_precision = lcs_len / len(summary)
     beta = lcs_precision / (lcs_recall + math.e ** -12)
-    rogue_l = ((1 + beta ** 2) * lcs_recall * lcs_precision) / (lcs_recall + beta ** 2 * lcs_precision)
+    try:
+        rogue_l = ((1 + beta ** 2) * lcs_recall * lcs_precision) / (lcs_recall + beta ** 2 * lcs_precision)
+    except ZeroDivisionError:
+        rogue_l = 0.0  # TODO
     return rogue_l
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def _encode(encoder, src_tensors, device):
-    encoder_h0 = encoder.initHidden(1, device)
-    src_tensors = src_tensors.permute(1, 0, 2)
-    #src_tensors = src_tensors.view(1, src_tensors.shape[0], -1)
+def _encode(encoder, src_tensors, device, src_pad_token, batch_size):
+    batch_size = src_tensors.shape[0]
+    encoder_h0 = encoder.initHidden(batch_size, device)
 
     # TODO, add pad sequence
-    encoder_outputs, encoder_hidden = encoder(src_tensors, encoder_h0)
+    # get the actual length of sequence for each sample, sort by decreasing order
+    src_tensors, sorted_seq_lens, sorted_indices = _sort_batch_seq(src_tensors, batch_size, src_pad_token)
+    src_tensors = torch.transpose(src_tensors, 0, 1)  # transpose, batch second
     #
-
-    # encoder_outputs:  torch.Size([150, 1, 256]) encoder_hidden:   torch.Size([1, 1, 256])
-
-    # # encoding
-    # encoder_hidden = encoder.initHidden(batch=1)
-    # encoder_outputs = torch.zeros(max_length, encoder.hidden_size, device=device)
-    #
-    # for ei in range(input_length):
-    #     encoder_output, encoder_hidden = encoder(src_tensors[ei], encoder_hidden)
-    #     encoder_outputs[ei] += encoder_output[0, 0]
-    # #
+    encoder_outputs, encoder_hidden = encoder(src_tensors, sorted_seq_lens, sorted_indices, encoder_h0)
 
     return encoder_outputs, encoder_hidden
 
 
-def _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, EOS_token, target_tensor=None, teacher_forcing=False):
-
+def _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, target_tensor=None, teacher_forcing=False):
     max_length = target_tensor.size(1)
-    # # decoding
-    # if target_tensor is not None:
-    #     decoder_input = target_tensor.view(target_tensor.shape[1], target_tensor.shape[0], -1)  # SOS
 
     decoded_outputs = []
-    #decoder_attentions = torch.zeros(max_length, max_length)
 
     # initialize decoder_input_t
     decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * SOS_token).long().to(device)
     decoder_hidden = encoder_hidden
 
-
     for t in range(max_length):
 
-        # ipdb > decoder_hidden.shape
-        # torch.Size([1, 1, 256])
-        # ipdb > encoder_outputs.shape
-        # torch.Size([150, 1, 256])
-        # ipdb > decoder_input_t
-        # tensor([[30211]])
-
-        decoder_output, decoder_hidden, decoder_attention, context_vector\
-            = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
-        #decoder_attentions[t] = decoder_attention.data
+        decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
         decoder_output = decoder_output.squeeze(0)
 
-
         if teacher_forcing:
-            decoder_input_t = target_tensor[:,t,:]
+            decoder_input_t = target_tensor[:, t, :]
         else:
             _, topi = decoder_output.topk(1)
             decoder_input_t = topi.detach()  # detach from history as input
 
         decoded_outputs.append(decoder_output)
 
-        # if int(topi.data[0][0]) == EOS_token:
-        #     break
-    #
-
-
     return decoded_outputs
+
 
 def _decode_predict_index(decoded_outputs, vocab):
     # decoded_outputs -> words
@@ -124,7 +103,7 @@ def _decode_target_index(target_tensors, vocab):
     length = target_tensors.size(1)
 
     for i in range(length):
-        word_index = int(target_tensors[:,i,:])
+        word_index = int(target_tensors[:, i, :])
         word = vocab[word_index]
         target_words.append(word)
         if word == '<EOS>':
@@ -134,19 +113,14 @@ def _decode_target_index(target_tensors, vocab):
 
 def loss_compute(target_tensors, decoded_outputs, ignore_index):
     # compute loss
-    criterion = nn.NLLLoss()
+    criterion = nn.NLLLoss(ignore_index=ignore_index)
     loss = 0
 
     for i, decoded_output in enumerate(decoded_outputs):
-        gt_output = target_tensors[:, i, :]
-        if int(gt_output) == ignore_index:
-            break
+        gt_output = target_tensors[:, i, :].squeeze(1)
+        loss += criterion(decoded_output, gt_output)
 
-        # decoded_output: torch.Size([1, f_dim])
-        # gt_output: torch.Size([1])
-        loss += criterion(decoded_output, gt_output[0])
-
-    loss = float(loss / target_tensors.size(1))
+    loss = float(loss / target_tensors.size(1)) # not exact loss, approximate
 
     return loss
 
@@ -166,19 +140,19 @@ def predict(encoder, decoder, src_t_tensor, vocab, max_length=20, SOS_token=0):
         return decoded_words
 
 
-def evaluate(encoder, decoder, src_tensor, target_tensor, vocab, device, SOS_token, ignore_index, EOS_token=0,
-             teacher_forcing=False):
+def predict_on_test(encoder, decoder, src_tensor, target_tensor, vocab, device, target_SOS_token, target_pad_token,
+                    src_pad_token, EOS_token=0,
+                    teacher_forcing=False, batch_size=1):
     with torch.no_grad():
-
         # encode
-        encoder_outputs, encoder_hidden = _encode(encoder, src_tensor, device)
+        encoder_outputs, encoder_hidden = _encode(encoder, src_tensor, device, src_pad_token, batch_size)
 
         # decode
-        decoded_outputs = _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, EOS_token,
-                                                          target_tensor, teacher_forcing=teacher_forcing)
+        decoded_outputs = _decode(decoder, encoder_outputs, encoder_hidden, target_SOS_token,
+                                  target_tensor, teacher_forcing=teacher_forcing)
 
         # compute loss
-        loss = loss_compute(target_tensor, decoded_outputs, ignore_index)
+        loss = loss_compute(target_tensor, decoded_outputs, target_pad_token)
 
         # decode predict word index into words
         decoded_words = _decode_predict_index(decoded_outputs, vocab)
@@ -187,3 +161,19 @@ def evaluate(encoder, decoder, src_tensor, target_tensor, vocab, device, SOS_tok
         target_words = _decode_target_index(target_tensor, vocab)
 
         return loss, decoded_words, target_words
+
+
+def eval_on_val(encoder, decoder, src_tensor, target_tensor, device, target_SOS_token, target_pad_token, src_pad_token,
+                teacher_forcing=False, batch_size=None):
+    with torch.no_grad():
+        # encode
+        encoder_outputs, encoder_hidden = _encode(encoder, src_tensor, device, src_pad_token, batch_size)
+
+        # decode
+        decoded_outputs = _decode(decoder, encoder_outputs, encoder_hidden, target_SOS_token,
+                                  target_tensor, teacher_forcing=teacher_forcing)
+
+        # compute loss
+        loss = loss_compute(target_tensor, decoded_outputs, target_pad_token)
+
+        return loss

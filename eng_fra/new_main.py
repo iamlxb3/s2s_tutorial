@@ -12,10 +12,14 @@ from easydict import EasyDict as edict
 
 sys.path.append("..")
 from main_funcs.trainer import epoches_train2
+from main_funcs.eval_predict import predict_on_test
 from utils.helpers import model_get
 from utils.helpers import seq_max_length_get
 from main_funcs.gen import EnFraDataSet
 from torch.utils.data import DataLoader
+from main_funcs.eval_predict import bleu_compute
+from main_funcs.eval_predict import rogue_compute
+from main_funcs.recorder import EpochRecorder
 import torch.nn as nn
 from torch import optim
 
@@ -36,6 +40,7 @@ def main():
     #
 
     # model config
+    is_eval = True
     load_model = False
     use_pretrain_embedding = False
     save_model = True
@@ -57,15 +62,15 @@ def main():
     # config dict
     config = edict()
     config.device = device
-    config.encoder_input_dim = 256
-    config.encoder_hidden_dim = 256
-    config.decoder_input_dim = 256
-    config.decoder_hidden_dim = 256
+    config.encoder_input_dim = 512
+    config.encoder_hidden_dim = 512
+    config.decoder_input_dim = 512
+    config.decoder_hidden_dim = 512
     config.encoder_pad_shape = (seq_max_length_get(seq_csv_path, 'source'), 1)
     config.decoder_pad_shape = (seq_max_length_get(seq_csv_path, 'target'), 1)
     config.lr = 1e-3
-    config.epoches = 28
-    config.batch_size = 32
+    config.epoches = 300
+    config.batch_size = 512
     config.num_workers = 8
     config.use_teacher_forcing = True
     config.data_shuffle = True
@@ -77,7 +82,7 @@ def main():
     fra_vocab = pickle.load(open(fra_vocab_path, 'rb'))
 
     src_vocab_len = len(en_vocab)
-    #src_EOS_token = int(en_vocab.index('<EOS>'))
+    # src_EOS_token = int(en_vocab.index('<EOS>'))
     src_pad_token = int(en_vocab.index('<PAD>'))
 
     target_vocab_len = len(fra_vocab)
@@ -94,7 +99,9 @@ def main():
     #
 
     # other configs
-    N = 10000
+    N = None
+    if N is None:
+        N = 999999999
     #
 
     # load model
@@ -105,22 +112,23 @@ def main():
     config.criterion = nn.NLLLoss(ignore_index=target_pad_token)
     #
 
+    # Split train / val, TODO
+    X = pd.read_csv(seq_csv_path)['source'].values[:N]
+    Y = pd.read_csv(seq_csv_path)['target'].values[:N]
+    uids = pd.read_csv(seq_csv_path)['uid'].values[:N]
 
-
-    # Split train / val
-    x_paths = glob.glob(os.path.join(train_x_dir, '*.pt'))
-    print("Total: ", len(x_paths))
-    x_paths = x_paths[:N]
     random.seed(1)  # TODO, add shuffle
-    random.shuffle(x_paths)
+    shuffled_X_Y_uids = list(zip(X, Y, uids))
+    random.shuffle(shuffled_X_Y_uids)
+    X, Y, uids = zip(*shuffled_X_Y_uids)
     val_percent = 0.2
-    val_index = int(N * val_percent)
-    train_x_paths = x_paths[val_index:N]
-    val_x_paths = x_paths[0:val_index]
+    val_index = int(val_percent * len(X))
+    train_X, train_Y, train_uids = X[val_index:], Y[val_index:], uids[val_index:]
+    val_X, val_Y, val_uids = X[:val_index], Y[:val_index], uids[:val_index]
     #
 
     # get generator
-    train_generator = EnFraDataSet(seq_csv_path, config.encoder_pad_shape, config.decoder_pad_shape,
+    train_generator = EnFraDataSet(train_X, train_Y, train_uids, config.encoder_pad_shape, config.decoder_pad_shape,
                                    src_pad_token, target_pad_token, use_pretrain_embedding)
     train_loader = DataLoader(train_generator,
                               batch_size=config.batch_size,
@@ -128,31 +136,25 @@ def main():
                               num_workers=config.num_workers,
                               # pin_memory=True
                               )
+    val_generator = EnFraDataSet(val_X, val_Y, val_uids, config.encoder_pad_shape, config.decoder_pad_shape,
+                                 src_pad_token, target_pad_token, use_pretrain_embedding)
+    val_loader = DataLoader(val_generator,
+                            batch_size=config.batch_size,
+                            shuffle=False,
+                            num_workers=config.num_workers,
+                            # pin_memory=True
+                            )
 
-    # val_generator = EnFraDataSet(val_x_paths, seq_csv_path, input_shape, output_shape, ignore_index)
-    # val_loader = DataLoader(val_generator,
-    #                         batch_size=batch_size,
-    #                         shuffle=False,
-    #                         num_workers=num_workers,
-    #                         # pin_memory=True
-    #                         )
+    # get epoch recorder
+    epoch_recorder = EpochRecorder()
     #
 
     # start training
     step_size = len(train_generator) / config.batch_size
     config.step_size = step_size
-    epoches_train2(config, train_loader, encoder, decoder)
-    print('training ok!')
+    epoches_train2(config, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path)
+    print('Training done!')
     #
-
-    if save_model:
-        # save model
-        torch.save(encoder, encoder_path)
-        print("Save encoder to {}.".format(encoder_path))
-        torch.save(decoder, decoder_path)
-        print("Save decoder to {}.".format(decoder_path))
-    #
-
 
 if __name__ == '__main__':
     main()

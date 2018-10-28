@@ -6,6 +6,7 @@ import torch
 import pandas as pd
 import os
 from nltk.tokenize import word_tokenize
+from sklearn.model_selection import train_test_split
 
 def _sort_vocab(vocab):
     vocab = list(collections.Counter(vocab).items())
@@ -66,7 +67,9 @@ def _words_to_indices(words, vocab):
 def save_x_y_npy(eng_vocab, fra_vocab, txt_path, glove_dict):
 
     save_dir = '/Users/pjs/byte_play/data/eng_fra/train_small'
-    pd_path = '/Users/pjs/byte_play/data/eng_fra/train_small_seq.csv'
+    train_pd_path = '/Users/pjs/byte_play/data/eng_fra/train_small_seq.csv'
+    test_pd_path = '/Users/pjs/byte_play/data/eng_fra/test_small_seq.csv'
+
     df = {'uid': [], 'source': [], 'target': []}
 
     EOS_token = '<EOS>'
@@ -121,7 +124,9 @@ def save_x_y_npy(eng_vocab, fra_vocab, txt_path, glove_dict):
             # print('French: ', fra_words)
 
     df = pd.DataFrame(df)
-    df.to_csv(pd_path, index=False)
+    train, test = train_test_split(df, test_size=0.1)
+    train.to_csv(train_pd_path, index=False)
+    test.to_csv(test_pd_path, index=False)
 
 if __name__ == '__main__':
 
