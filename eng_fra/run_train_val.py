@@ -13,6 +13,7 @@ from utils.helpers import model_get
 from funcs.gen import EnFraDataSet
 from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
+from torch.optim import lr_scheduler
 import torch.nn as nn
 from torch import optim
 from config import config
@@ -51,7 +52,6 @@ def main():
     decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set))
     #
 
-
     # read VOCAB
     en_vocab = pickle.load(open(en_vocab_path, 'rb'))
     fra_vocab = pickle.load(open(fra_vocab_path, 'rb'))
@@ -82,8 +82,11 @@ def main():
     # load model
     encoder, decoder = model_get(device, load_model, encoder_path, decoder_path, config, is_train=True)
 
-    config.encoder_optimizer = optim.Adam(encoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
-    config.decoder_optimizer = optim.Adam(decoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
+    # config.encoder_optimizer = optim.Adam(encoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
+    # config.decoder_optimizer = optim.Adam(decoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
+
+    config.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()))
+    config.lr_scheduler = lr_scheduler.ReduceLROnPlateau(config.optimizer, 'min', verbose=True) # TODO, config
     config.criterion = nn.NLLLoss(ignore_index=target_pad_token)
     #
 
@@ -130,6 +133,7 @@ def main():
     epoches_train(config, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path)
     print('Training done!')
     #
+
 
 if __name__ == '__main__':
     main()

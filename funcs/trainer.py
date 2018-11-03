@@ -25,8 +25,7 @@ def epoches_train(config, train_loader, val_loader, encoder, decoder, epoch_reco
             batch_y = batch_y.to(device)
 
             loss = train_1_batch_basic_rnn(batch_x, batch_y, encoder, decoder,
-                                           config.encoder_optimizer,
-                                           config.decoder_optimizer,
+                                           config.optimizer,
                                            criterion,
                                            use_teacher_forcing=config.use_teacher_forcing,
                                            src_pad_token=config.src_pad_token,
@@ -47,6 +46,7 @@ def epoches_train(config, train_loader, val_loader, encoder, decoder, epoch_reco
                                config.src_pad_token, teacher_forcing=False, batch_size=config.batch_size)
             val_loss.append(loss)
         val_loss = np.average(val_loss)
+        config.lr_scheduler.step(val_loss)
         epoch_loss = epoch_loss / config.step_size
         #
 
@@ -66,7 +66,7 @@ def epoches_train(config, train_loader, val_loader, encoder, decoder, epoch_reco
 
 
 
-def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer,
+def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, optimizer,
                             criterion,
                             verbose=True,
                             device=None,
@@ -89,8 +89,7 @@ def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, encod
     target_max_len = target_tensor.size(1)  # torch.Size([9, 1])
     loss = 0
     encoder_h0 = encoder.initHidden(batch_size, device)
-    encoder_optimizer.zero_grad()
-    decoder_optimizer.zero_grad()
+    optimizer.zero_grad()
     #
 
     # get the actual length of sequence for each sample, sort by decreasing order
@@ -147,8 +146,7 @@ def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, encod
     # calculate gradient & update parameters
 
     loss.backward()
-    encoder_optimizer.step()
-    decoder_optimizer.step()
+    optimizer.step()
 
     avg_batch_loss = loss.item() / target_max_len
     return avg_batch_loss
