@@ -62,15 +62,16 @@ def main():
     # config dict
     config = edict()
     config.device = device
-    config.encoder_input_dim = 512
-    config.encoder_hidden_dim = 512
-    config.decoder_input_dim = 512
-    config.decoder_hidden_dim = 512
+    dim = 256
+    config.encoder_input_dim = dim
+    config.encoder_hidden_dim = dim
+    config.decoder_input_dim = dim
+    config.decoder_hidden_dim = dim
     config.encoder_pad_shape = (seq_max_length_get(seq_csv_path, 'source'), 1)
     config.decoder_pad_shape = (seq_max_length_get(seq_csv_path, 'target'), 1)
-    config.lr = 1e-3
-    config.epoches = 300
-    config.batch_size = 512
+    config.lr = 1e-4
+    config.epoches = 100
+    config.batch_size = 64
     config.num_workers = 8
     config.use_teacher_forcing = True
     config.data_shuffle = True
