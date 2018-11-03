@@ -1,29 +1,26 @@
 import torch
+import math
+import numpy as np
 import sys
 import pandas as pd
 
 sys.path.append("..")
 
-from main_funcs.encoder import EncoderRnn
-from main_funcs.decoder import DecoderRnn
+from funcs.encoder import EncoderRnn
+from funcs.decoder import DecoderRnn
 
 
-# def model_get(device, load_model, encoder_path, decoder_path, input_dim, hidden_size, encoder_nlayers, target_vocab_len,
-#               max_length, is_train=True):
-#     # create model
-#     if load_model:
-#         encoder = torch.load(encoder_path).to(device)
-#         print("Load encoder from {}.".format(encoder_path))
-#         decoder = torch.load(decoder_path).to(device)
-#         print("Load decoder from {}.".format(decoder_path))
-#     else:
-#         encoder = EncoderGru(input_dim, hidden_size, encoder_nlayers).to(device)
-#         decoder = AttnDecoderRNN(hidden_size, target_vocab_len, dropout_p=0.1, max_length=max_length).to(device)
-#         print('model initialization ok!')
-#     #
-#     if is_train:
-#         encoder, decoder = encoder.train(), decoder.train()
-#     return encoder, decoder
+def pos_encode(pos, dim):
+    pos_embeddings = []
+    for i in range(dim):
+        if i % 2 == 0:
+            pos_embedding = math.cos(pos / 1000 ** (2 * i / dim))
+        else:
+            pos_embedding = math.sin(pos / 1000 ** (2 * i / dim))
+        pos_embeddings.append(pos_embedding)
+    pos_embeddings = np.array([pos_embeddings])
+    return pos_embeddings
+
 
 
 def model_get(device, load_model, encoder_path, decoder_path, config_dict, is_train=True):
@@ -102,3 +99,15 @@ def save_cktpoint(encoder, decoder, encoder_path, decoder_path):
     print("Save encoder to {}.".format(encoder_path))
     torch.save(decoder, decoder_path)
     print("Save decoder to {}.".format(decoder_path))
+
+
+def lcsubstring_length(a, b):
+    table = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
+    l = 0
+    for i, ca in enumerate(a, 1):
+        for j, cb in enumerate(b, 1):
+            if ca == cb:
+                table[i][j] = table[i - 1][j - 1] + 1
+                if table[i][j] > l:
+                    l = table[i][j]
+    return l

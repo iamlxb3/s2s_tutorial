@@ -11,9 +11,7 @@ import nltk
 import sys
 
 sys.path.append('..')
-from utils.helpers import _sort_batch_seq
-
-from .lcs import lcsubstring_length
+from utils.helpers import _sort_batch_seq, lcsubstring_length
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -2,11 +2,11 @@
 import pandas as pd
 import sys
 sys.path.append("..")
-from main_funcs.gen import EnFraDataSet
+from funcs.gen import EnFraDataSet
 from torch.utils.data import DataLoader
-from main_funcs.eval_predict import bleu_compute
-from main_funcs.eval_predict import rogue_compute
-from main_funcs.eval_predict import predict_on_test
+from funcs.eval_predict import bleu_compute
+from funcs.eval_predict import rogue_compute
+from funcs.eval_predict import predict_on_test
 from utils.helpers import seq_max_length_get
 
 from easydict import EasyDict as edict
