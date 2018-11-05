@@ -70,5 +70,6 @@ cfg.lr = 1e-3
 cfg.epoches = 100
 cfg.batch_size = 64
 cfg.use_teacher_forcing = True
+cfg.teacher_forcing_ratio = 0.5
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
 #

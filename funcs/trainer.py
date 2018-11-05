@@ -1,6 +1,7 @@
 import ipdb
 import sys
 import torch
+import random
 import numpy as np
 
 sys.path.append('..')
@@ -15,7 +16,8 @@ def train_1_batch_basic_rnn(input_tensor, target_tensor, encoder, decoder, optim
                             device=None,
                             use_teacher_forcing=False,
                             src_pad_token=None,
-                            target_SOS_token=None):
+                            target_SOS_token=None,
+                            teacher_forcing_ratio=1.0):
     """
 
     :param input_tensor: torch.Size([batch_size, max_padding_len, 1])
@@ -99,7 +101,9 @@ def train_1_batch_attn(input_tensor, target_tensor, encoder, decoder, optimizer,
                        device=None,
                        use_teacher_forcing=False,
                        src_pad_token=None,
-                       target_SOS_token=None, ):
+                       target_SOS_token=None,
+                       teacher_forcing_ratio=1.0
+                       ):
     # initialize
     batch_size = input_tensor.shape[0]
     target_max_len = target_tensor.size(1)  # torch.Size([9, 1])
@@ -120,7 +124,8 @@ def train_1_batch_attn(input_tensor, target_tensor, encoder, decoder, optimizer,
     if verbose:
         decoded_outputs = []
 
-    # TODO, add teacher forcing ratio
+    use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
+    print("use tf: ", use_teacher_forcing)
 
     for t in range(target_max_len):
 
@@ -189,7 +194,8 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
                                                use_teacher_forcing=cfg.use_teacher_forcing,
                                                src_pad_token=cfg.src_pad_token,
                                                target_SOS_token=cfg.target_SOS_token,
-                                               device=cfg.device)
+                                               device=cfg.device,
+                                               teacher_forcing_ratio=cfg.teacher_forcing_ratio)
 
             epoch_loss += loss
 
