@@ -8,7 +8,7 @@ sys.path.append("..")
 
 from funcs.encoder import EncoderRnn
 from funcs.decoder import DecoderRnn
-
+from funcs.decoder import AttnDecoderRNN
 
 def pos_encode(pos, dim):
     pos_embeddings = []
@@ -23,35 +23,40 @@ def pos_encode(pos, dim):
 
 
 
-def model_get(device, load_model, encoder_path, decoder_path, config_dict, is_train=True):
+def model_get(cfg):
     # create model
-    if load_model:
-        encoder = torch.load(encoder_path).to(device)
-        print("Load encoder from {}.".format(encoder_path))
-        decoder = torch.load(decoder_path).to(device)
-        print("Load decoder from {}.".format(decoder_path))
+    if cfg.load_model:
+        encoder = torch.load(cfg.encoder_path).to(cfg.device)
+        print("Load encoder from {}.".format(cfg.encoder_path))
+        decoder = torch.load(cfg.decoder_path).to(cfg.device)
+        print("Load decoder from {}.".format(cfg.decoder_path))
     else:
 
         # load encoder config
-        encoder_input_dim = config_dict['encoder_input_dim']
-        encoder_hidden_dim = config_dict['encoder_hidden_dim']
-        src_vocab_len = config_dict['src_vocab_len']
+        encoder_input_dim = cfg['encoder_input_dim']
+        encoder_hidden_dim = cfg['encoder_hidden_dim']
+        src_vocab_len = cfg['src_vocab_len']
         #
 
         # load decoder config
-        decoder_input_dim = config_dict['decoder_input_dim']
-        decoder_hidden_dim = config_dict['decoder_hidden_dim']
-        target_vocab_len = config_dict['target_vocab_len']
+        decoder_input_dim = cfg['decoder_input_dim']
+        decoder_hidden_dim = cfg['decoder_hidden_dim']
+        target_vocab_len = cfg['target_vocab_len']
         #
 
-        encoder = EncoderRnn(encoder_input_dim, encoder_hidden_dim, src_vocab_len).to(device)
-        decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(device)
+        encoder = EncoderRnn(encoder_input_dim, encoder_hidden_dim, src_vocab_len).to(cfg.device)
+        if cfg.model_type == 'basic_rnn':
+            decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
+        elif cfg.model_type == 'basic_attn':
+            decoder = AttnDecoderRNN('general', target_vocab_len, decoder_input_dim, decoder_hidden_dim).to(cfg.device)
         print('model initialization ok!')
     #
-    if is_train:
-        encoder, decoder = encoder.train(), decoder.train()
-    else:
-        encoder, decoder = encoder.eval(), decoder.eval()
+
+    encoder, decoder = encoder.train(), decoder.train()
+    # if is_train:
+    #     encoder, decoder = encoder.train(), decoder.train()
+    # else:
+    #     encoder, decoder = encoder.eval(), decoder.eval()
     return encoder, decoder
 
 def seq_max_length_get(seq_csv_path, key):

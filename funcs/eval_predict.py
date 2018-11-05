@@ -56,7 +56,7 @@ def _encode(encoder, src_tensors, device, src_pad_token, batch_size):
     return encoder_outputs, encoder_hidden
 
 
-def _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, target_tensor=None, teacher_forcing=False):
+def _decode(cfg, decoder, encoder_outputs, encoder_hidden, SOS_token, target_tensor=None, teacher_forcing=False):
     max_length = target_tensor.size(1)
 
     decoded_outputs = []
@@ -67,7 +67,11 @@ def _decode(decoder, encoder_outputs, encoder_hidden, SOS_token, target_tensor=N
 
     for t in range(max_length):
 
-        decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
+        if cfg.model_type == 'basic_rnn':
+            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
+        elif cfg.model_type == 'basic_attn':
+            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
+
         decoder_output = decoder_output.squeeze(0)
 
         if teacher_forcing:
@@ -118,7 +122,7 @@ def loss_compute(target_tensors, decoded_outputs, ignore_index):
         gt_output = target_tensors[:, i, :].squeeze(1)
         loss += criterion(decoded_output, gt_output)
 
-    loss = float(loss / target_tensors.size(1)) # not exact loss, approximate
+    loss = float(loss / target_tensors.size(1))  # not exact loss, approximate
 
     return loss
 
@@ -161,14 +165,14 @@ def predict_on_test(encoder, decoder, src_tensor, target_tensor, vocab, device, 
         return loss, decoded_words, target_words
 
 
-def eval_on_val(encoder, decoder, src_tensor, target_tensor, device, target_SOS_token, target_pad_token, src_pad_token,
-                teacher_forcing=False, batch_size=None):
+def eval_on_val(cfg, encoder, decoder, src_tensor, target_tensor, device, target_SOS_token, target_pad_token,
+                src_pad_token, teacher_forcing=False, batch_size=None):
     with torch.no_grad():
         # encode
         encoder_outputs, encoder_hidden = _encode(encoder, src_tensor, device, src_pad_token, batch_size)
 
         # decode
-        decoded_outputs = _decode(decoder, encoder_outputs, encoder_hidden, target_SOS_token,
+        decoded_outputs = _decode(cfg, decoder, encoder_outputs, encoder_hidden, target_SOS_token,
                                   target_tensor, teacher_forcing=teacher_forcing)
 
         # compute loss

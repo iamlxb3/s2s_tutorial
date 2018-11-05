@@ -1,6 +1,9 @@
 """
 TODOLIST:
 1. add print LR every epoch
+2. add teacher-forcing by ratio
+3. add attention display
+4. clean code on eval/test
 """
 import random
 import sys
@@ -32,13 +35,13 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = 100
+    N = None
     if N is None:
         N = 999999999
     #
 
     # load model
-    encoder, decoder = model_get(cfg.device, cfg.load_model, cfg.encoder_path, cfg.decoder_path, cfg, is_train=True)
+    encoder, decoder = model_get(cfg)
 
     # config.encoder_optimizer = optim.Adam(encoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
     # config.decoder_optimizer = optim.Adam(decoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
