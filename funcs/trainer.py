@@ -125,7 +125,6 @@ def train_1_batch_attn(input_tensor, target_tensor, encoder, decoder, optimizer,
         decoded_outputs = []
 
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
-    print("use tf: ", use_teacher_forcing)
 
     for t in range(target_max_len):
 
@@ -211,6 +210,8 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
             val_loss.append(loss)
         val_loss = np.average(val_loss)
         cfg.lr_scheduler.step(val_loss)
+        print("Current lr: ", cfg.optimizer.param_groups[0]['lr'])
+
         epoch_loss = epoch_loss / cfg.step_size
         #
 

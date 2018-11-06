@@ -12,7 +12,7 @@ cfg = edict()
 # other config
 cfg.verbose = True
 cfg.load_model = False
-cfg.model_type = 'basic_attn' # basic_rnn, basic_attn
+cfg.model_type = 'basic_rnn' # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #
@@ -70,6 +70,6 @@ cfg.lr = 1e-3
 cfg.epoches = 100
 cfg.batch_size = 64
 cfg.use_teacher_forcing = True
-cfg.teacher_forcing_ratio = 0.5
+cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
 #

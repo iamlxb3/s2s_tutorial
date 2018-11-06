@@ -1,9 +1,7 @@
 """
 TODOLIST:
-1. add print LR every epoch
-2. add teacher-forcing by ratio
-3. add attention display
-4. clean code on eval/test
+2. add attention display
+3. clean code on eval/test
 """
 import random
 import sys
@@ -35,7 +33,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = None
+    N = 100
     if N is None:
         N = 999999999
     #
@@ -48,7 +46,7 @@ def main():
 
     # set optimizer & lr_scheduler
     cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()))
-    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True)  # TODO, config
+    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-8)
     #
 
     # Split train / val, TODO
