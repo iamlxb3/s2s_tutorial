@@ -43,9 +43,6 @@ def main():
     # load model
     encoder, decoder = model_get(cfg)
 
-    # config.encoder_optimizer = optim.Adam(encoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
-    # config.decoder_optimizer = optim.Adam(decoder.parameters(), lr=config.lr, eps=1e-3, amsgrad=True)
-
     # set optimizer & lr_scheduler
     cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()))
     cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-8)
