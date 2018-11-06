@@ -23,7 +23,8 @@ top_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(top_dir, 'data')
 model_pkl_dir = os.path.join(top_dir, 'model_pkls')
 train_x_dir = os.path.join(data_dir, data_set, 'train')
-cfg.seq_csv_path = os.path.join(data_dir, data_set, 'train_small_seq.csv')
+cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train_small_seq.csv')
+cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test_small_seq.csv')
 en_vocab_path = os.path.join(data_dir, data_set, 'small_eng_vocab.pkl')
 fra_vocab_path = os.path.join(data_dir, data_set, 'small_fra_vocab.pkl')
 #
@@ -61,8 +62,8 @@ cfg.encoder_input_dim = dim
 cfg.encoder_hidden_dim = dim
 cfg.decoder_input_dim = dim
 cfg.decoder_hidden_dim = dim
-cfg.encoder_pad_shape = (seq_max_length_get(cfg.seq_csv_path, 'source'), 1)
-cfg.decoder_pad_shape = (seq_max_length_get(cfg.seq_csv_path, 'target'), 1)
+cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
+cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
 #
 
 # training hyper-parameters config

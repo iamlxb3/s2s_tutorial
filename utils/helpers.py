@@ -10,6 +10,7 @@ from funcs.encoder import EncoderRnn
 from funcs.decoder import DecoderRnn
 from funcs.decoder import AttnDecoderRNN
 
+
 def pos_encode(pos, dim):
     pos_embeddings = []
     for i in range(dim):
@@ -20,7 +21,6 @@ def pos_encode(pos, dim):
         pos_embeddings.append(pos_embedding)
     pos_embeddings = np.array([pos_embeddings])
     return pos_embeddings
-
 
 
 def model_get(cfg):
@@ -58,6 +58,7 @@ def model_get(cfg):
     # else:
     #     encoder, decoder = encoder.eval(), decoder.eval()
     return encoder, decoder
+
 
 def seq_max_length_get(seq_csv_path, key):
     df = pd.read_csv(seq_csv_path)
@@ -98,6 +99,7 @@ def _sort_batch_seq(input_tensor, batch_size, src_pad_token):
     #
     return input_tensor, sorted_seq_lens, sorted_indices
 
+
 def save_cktpoint(encoder, decoder, encoder_path, decoder_path):
     # save model
     torch.save(encoder, encoder_path)
@@ -116,3 +118,79 @@ def lcsubstring_length(a, b):
                 if table[i][j] > l:
                     l = table[i][j]
     return l
+
+
+def encode_func(cfg, input_tensor, encoder):
+    batch_size = input_tensor.shape[0]
+
+    encoder_h0 = encoder.initHidden(batch_size, cfg.device)
+
+    # get the actual length of sequence for each sample, sort by decreasing order
+    input_tensor, sorted_seq_lens, sorted_indices = _sort_batch_seq(input_tensor, batch_size, cfg.src_pad_token)
+    input_tensor = torch.transpose(input_tensor, 0, 1)  # transpose, batch second
+    #
+
+    # encode
+    encoder_outputs, encoder_hidden = encoder(input_tensor, sorted_seq_lens, sorted_indices, encoder_h0)
+    #
+
+    return encoder_outputs, encoder_hidden
+
+
+def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
+                is_test=False):
+    # load config
+    verbose = cfg.verbose
+    target_SOS_token = cfg.target_SOS_token
+    device = cfg.device
+    target_max_len = target_tensor.size(1)
+    criterion = cfg.criterion
+
+    if verbose or is_test:
+        decoded_outputs = []
+
+    # initialize decoder_hidden, decoder_input_0
+    decoder_hidden = encoder_last_hidden
+    decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * target_SOS_token).long().to(device)
+
+    for t in range(target_max_len):
+
+        # (1.) basic rnn
+        if cfg.model_type == 'basic_rnn':
+            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
+        # (2.) basic attn
+        elif cfg.model_type == 'basic_attn':
+            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
+
+        decoder_output = decoder_output.squeeze(0)
+
+        if is_test:
+            decoded_outputs.append(decoder_output)
+
+        target_tensor_t = target_tensor[:, t, :]
+
+        if not use_teacher_forcing:
+            topv, topi = decoder_output.topk(1)
+            decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
+        else:
+            decoder_input_t = target_tensor_t
+
+        loss += criterion(decoder_output, target_tensor_t.squeeze(1))
+
+    # if verbose:
+    #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
+    #     new_decoded_outputs = []
+    #     for x in decoded_outputs:
+    #         new_decoded_outputs.append(x)
+    #         if x == target_EOS_index:
+    #             break
+    #
+    #     print("\n--------------------------------------------")
+    #     print("decoded_outputs: ", new_decoded_outputs)
+    #     print("target_tensor: ", print_target)
+    #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
+
+    if is_test:
+        return loss, target_max_len, decoded_outputs
+
+    return loss, target_max_len

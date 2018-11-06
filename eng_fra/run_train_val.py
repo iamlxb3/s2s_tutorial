@@ -1,7 +1,9 @@
 """
 TODOLIST:
-2. add attention display
-3. clean code on eval/test
+1. add attention display
+2. clean code on eval/test
+
+try pin_memory to speed up
 """
 import random
 import sys
@@ -33,7 +35,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = 100
+    N = 500
     if N is None:
         N = 999999999
     #
