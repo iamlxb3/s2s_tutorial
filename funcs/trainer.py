@@ -43,7 +43,11 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
 
 def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path):
     # add attention-recoder
+
     for epoch, epoch_index in enumerate(range(cfg.epoches)):
+
+        # set to train mode
+        encoder, decoder = encoder.train(), decoder.train()
 
         epoch_loss = 0
         for batch_index, (batch_x, batch_y, uid) in enumerate(train_loader):
@@ -58,6 +62,8 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
                 print("Epoch-{} batch_index-{}/{} Loss: {}".format(epoch, batch_index, len(train_loader), loss))
 
         # eval on validation set
+        # set to eval mode
+        encoder, decoder = encoder.eval(), decoder.eval()
         val_loss = []
         for X_val, Y_val, uid in val_loader:
             # evaluate on validation set, use_teacher_forcing only for debug

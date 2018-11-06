@@ -3,6 +3,7 @@ import ipdb
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 # RNN
 class DecoderRnn(nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size):
@@ -25,6 +26,7 @@ class DecoderRnn(nn.Module):
         output, hidden = self.rnn(yt, ht)
         output = F.log_softmax(self.out(output), dim=2)
         return output, hidden
+
 
 # Decoder Attention
 class Attn(torch.nn.Module):
@@ -66,8 +68,10 @@ class Attn(torch.nn.Module):
         # Return the softmax normalized probability scores (with added dimension)
         return F.softmax(attn_energies, dim=1).unsqueeze(1)
 
+
 class AttnDecoderRNN(nn.Module):
-    def __init__(self, attn_model, vocab_size, input_dim, hidden_size, n_layers=1, dropout=0.1):
+    def __init__(self, attn_model, vocab_size, input_dim, hidden_size, n_layers=1, dropout=0.1,
+                 softmax_share_embedd=False):
         super(AttnDecoderRNN, self).__init__()
 
         # Keep for reference
@@ -82,8 +86,12 @@ class AttnDecoderRNN(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size, n_layers, dropout=(0 if n_layers == 1 else dropout))
         self.concat = nn.Linear(hidden_size * 2, hidden_size)
         self.out = nn.Linear(hidden_size, vocab_size)
-
         self.attn = Attn(attn_model, hidden_size)
+        self.softmax_share_embedd = softmax_share_embedd
+        # TODO, may be better initialize?
+        if self.softmax_share_embedd:
+            self.embedding_project = torch.nn.init.xavier_uniform_(
+                torch.randn((hidden_size, input_dim), requires_grad=True))
 
     def forward(self, input_step, last_hidden, encoder_outputs):
         """
@@ -111,7 +119,15 @@ class AttnDecoderRNN(nn.Module):
         concat_input = torch.cat((rnn_output, context), 1)
         concat_output = torch.tanh(self.concat(concat_input))
         # Predict next word using Luong eq. 6
-        output = self.out(concat_output)
+
+        # ADD BY PJS, out & embedding weight sharing
+        if self.softmax_share_embedd:
+            # shape: vocab_size x hidden dim
+            output_weights = self.embedding_project @ torch.transpose(self.embedding.weight.detach(), 1, 0)
+            output = concat_output @ output_weights
+        else:
+            output = self.out(concat_output)
+
         output = F.log_softmax(output, dim=1)
         # Return output and final hidden state
         return output, hidden

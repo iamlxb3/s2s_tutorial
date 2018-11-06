@@ -17,6 +17,7 @@ def predict():
     # load models
     encoder = torch.load(cfg.encoder_path)
     decoder = torch.load(cfg.decoder_path)
+    encoder, decoder = encoder.eval(), decoder.eval()
     print("Load encoder from {}, decoder from {}".format(cfg.encoder_path, cfg.decoder_path))
     #
 

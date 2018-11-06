@@ -48,15 +48,11 @@ def model_get(cfg):
         if cfg.model_type == 'basic_rnn':
             decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
         elif cfg.model_type == 'basic_attn':
-            decoder = AttnDecoderRNN('general', target_vocab_len, decoder_input_dim, decoder_hidden_dim).to(cfg.device)
+            decoder = AttnDecoderRNN('general', target_vocab_len, decoder_input_dim, decoder_hidden_dim,
+                                     softmax_share_embedd=cfg.softmax_share_embedd).to(cfg.device)
         print('model initialization ok!')
     #
 
-    encoder, decoder = encoder.train(), decoder.train()
-    # if is_train:
-    #     encoder, decoder = encoder.train(), decoder.train()
-    # else:
-    #     encoder, decoder = encoder.eval(), decoder.eval()
     return encoder, decoder
 
 

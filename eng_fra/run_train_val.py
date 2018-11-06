@@ -1,7 +1,7 @@
 """
 TODOLIST:
 1. add attention display
-2. clean code on eval/test
+2. add bi-gry function
 
 try pin_memory to speed up
 """
@@ -35,7 +35,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = 500
+    N = None
     if N is None:
         N = 999999999
     #
@@ -49,9 +49,10 @@ def main():
     #
 
     # Split train / val, TODO
-    X = pd.read_csv(cfg.seq_csv_path)['source'].values[:N]
-    Y = pd.read_csv(cfg.seq_csv_path)['target'].values[:N]
-    uids = pd.read_csv(cfg.seq_csv_path)['uid'].values[:N]
+    csv_path = cfg.train_seq_csv_path
+    X = pd.read_csv(csv_path)['source'].values[:N]
+    Y = pd.read_csv(csv_path)['target'].values[:N]
+    uids = pd.read_csv(csv_path)['uid'].values[:N]
 
     random.seed(1)  # TODO, add shuffle
     shuffled_X_Y_uids = list(zip(X, Y, uids))
