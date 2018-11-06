@@ -65,6 +65,7 @@ cfg.decoder_hidden_dim = dim
 cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
 cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
 cfg.softmax_share_embedd = True
+cfg.rnn_bi_direction = True
 #
 
 # training hyper-parameters config
