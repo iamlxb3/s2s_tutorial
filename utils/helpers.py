@@ -7,7 +7,7 @@ import pandas as pd
 
 sys.path.append("..")
 
-from funcs.encoder import EncoderRnn
+from funcs.encoder import Encoder
 from funcs.decoder import DecoderRnn
 from funcs.decoder import AttnDecoderRNN
 
@@ -45,7 +45,8 @@ def model_get(cfg):
         target_vocab_len = cfg['target_vocab_len']
         #
 
-        encoder = EncoderRnn(encoder_input_dim, encoder_hidden_dim, src_vocab_len).to(cfg.device)
+        encoder = Encoder(encoder_input_dim, encoder_hidden_dim, src_vocab_len,
+                          bidirectional=cfg.encoder_bi_direction, type=cfg.rnn_type).to(cfg.device)
         if cfg.model_type == 'basic_rnn':
             decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
         elif cfg.model_type == 'basic_attn':
