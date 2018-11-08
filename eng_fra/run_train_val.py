@@ -3,6 +3,8 @@ TODOLIST:
 1. add attention display
 2. add bi-gru function
 3. see https://github.com/ymfa/seq2seq-summarizer    pointer-generator source code
+4. add pointer-generator
+5. add coverage
 
 try pin_memory to speed up
 """

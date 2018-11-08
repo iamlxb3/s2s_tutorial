@@ -33,7 +33,7 @@ class Attn(torch.nn.Module):
     def __init__(self, method, hidden_size):
         super(Attn, self).__init__()
         self.method = method
-        if self.method not in ['dot', 'general', 'concat']:
+        if self.method not in ['dot', 'general', 'concat', 'coverage']:
             raise ValueError(self.method, "is not an appropriate attention method.")
         self.hidden_size = hidden_size
         if self.method == 'general':
@@ -41,6 +41,9 @@ class Attn(torch.nn.Module):
         elif self.method == 'concat':
             self.attn = torch.nn.Linear(self.hidden_size * 2, hidden_size)
             self.v = torch.nn.Parameter(torch.FloatTensor(hidden_size))
+        elif self.method == 'coverage':
+            self.attn = torch.nn.Linear(self.hidden_size, hidden_size)
+            self.coverage_param =  torch.nn.Linear(1, 1)
 
     def dot_score(self, hidden, encoder_output):
         return torch.sum(hidden * encoder_output, dim=2)
@@ -53,7 +56,12 @@ class Attn(torch.nn.Module):
         energy = self.attn(torch.cat((hidden.expand(encoder_output.size(0), -1, -1), encoder_output), 2)).tanh()
         return torch.sum(self.v * energy, dim=2)
 
-    def forward(self, hidden, encoder_outputs):
+    def coverage_score(self, hidden, encoder_output, coverage):
+        energy = self.attn(encoder_output)
+        coverage_value = torch.transpose(self.coverage_param(coverage.unsqueeze(2)).squeeze(2), 1, 0)
+        return torch.sum(hidden * energy, dim=2) * coverage_value
+
+    def forward(self, hidden, encoder_outputs, coverage=None):
         # Calculate the attention weights (energies) based on the given method
         if self.method == 'general':
             attn_energies = self.general_score(hidden, encoder_outputs)
@@ -61,6 +69,8 @@ class Attn(torch.nn.Module):
             attn_energies = self.concat_score(hidden, encoder_outputs)
         elif self.method == 'dot':
             attn_energies = self.dot_score(hidden, encoder_outputs)
+        elif self.method == 'coverage':
+            attn_energies = self.coverage_score(hidden, encoder_outputs, coverage)
 
         # Transpose max_length and batch_size dimensions
         attn_energies = attn_energies.t()
@@ -93,7 +103,7 @@ class AttnDecoderRNN(nn.Module):
             self.embedding_project = torch.nn.init.xavier_uniform_(
                 torch.randn((hidden_size, input_dim), requires_grad=True))
 
-    def forward(self, input_step, last_hidden, encoder_outputs):
+    def forward(self, input_step, last_hidden, encoder_outputs, coverage=None):
         """
         :param input_step:
         :param last_hidden:
@@ -110,7 +120,8 @@ class AttnDecoderRNN(nn.Module):
         # Forward through unidirectional GRU
         rnn_output, hidden = self.gru(embedded, last_hidden)
         # Calculate attention weights from the current GRU output
-        attn_weights = self.attn(rnn_output, encoder_outputs)
+        attn_weights = self.attn(rnn_output, encoder_outputs, coverage=coverage)
+        # TODO, add softmax?
         # Multiply attention weights to encoder outputs to get new "weighted sum" context vector
         context = attn_weights.bmm(encoder_outputs.transpose(0, 1))
         # Concatenate weighted context vector and GRU output using Luong eq. 5
@@ -130,4 +141,4 @@ class AttnDecoderRNN(nn.Module):
 
         output = F.log_softmax(output, dim=1)
         # Return output and final hidden state
-        return output, hidden
+        return output, hidden, attn_weights

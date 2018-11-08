@@ -1,5 +1,6 @@
 import torch
 import math
+import ipdb
 import numpy as np
 import sys
 import pandas as pd
@@ -48,7 +49,7 @@ def model_get(cfg):
         if cfg.model_type == 'basic_rnn':
             decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
         elif cfg.model_type == 'basic_attn':
-            decoder = AttnDecoderRNN('general', target_vocab_len, decoder_input_dim, decoder_hidden_dim,
+            decoder = AttnDecoderRNN(cfg.attn_method, target_vocab_len, decoder_input_dim, decoder_hidden_dim,
                                      softmax_share_embedd=cfg.softmax_share_embedd).to(cfg.device)
 
         # share embedding
@@ -144,9 +145,23 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     # load config
     verbose = cfg.verbose
     target_SOS_token = cfg.target_SOS_token
+    target_pad_token = cfg.target_pad_token
+
     device = cfg.device
     target_max_len = target_tensor.size(1)
     criterion = cfg.criterion
+
+    # add coverage
+    coverage_loss = 0
+    if cfg.is_coverage:
+        coverage_vector = torch.zeros(encoder_outputs.size(1), encoder_outputs.size(0))
+        # coverage mask
+        coverage_mask_list = []
+        for t in range(target_max_len):
+            mask = target_tensor[:, t, :] != target_pad_token
+            coverage_mask_list.append(mask.view(-1))
+        #
+    #
 
     if verbose or is_test:
         decoded_outputs = []
@@ -162,9 +177,22 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
             decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
         # (2.) basic attn
         elif cfg.model_type == 'basic_attn':
-            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
+            # coverage
+            if cfg.is_coverage:
+                if t != 0:
+                    coverage_mask = coverage_mask_list[t]
+                    coverage_loss_t = torch.sum(torch.min(coverage_vector, attn_weights.squeeze(1)), 1)
+                    coverage_loss_t = coverage_loss_t[coverage_mask]
+                    coverage_loss_t = torch.sum(coverage_loss_t)
+                    coverage_loss = coverage_loss + coverage_loss_t
+                    coverage_vector = coverage_vector + attn_weights.squeeze(0)
+                    # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
+                decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
+                                                                       coverage=coverage_vector)
+            else:
+                decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
 
-        decoder_output = decoder_output.squeeze(0)
+        # decoder_output = decoder_output.squeeze(0)
 
         if is_test:
             decoded_outputs.append(decoder_output)
@@ -178,6 +206,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
             decoder_input_t = target_tensor_t
 
         loss += criterion(decoder_output, target_tensor_t.squeeze(1))
+        loss += coverage_loss
 
     # if verbose:
     #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]

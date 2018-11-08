@@ -12,7 +12,7 @@ cfg = edict()
 # other config
 cfg.verbose = True
 cfg.load_model = False
-cfg.model_type = 'basic_rnn' # basic_rnn, basic_attn
+cfg.model_type = 'basic_attn' # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #
@@ -65,6 +65,11 @@ cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1
 cfg.share_embedding = True # encoder and decoder share the same embedding layer
 cfg.softmax_share_embedd = True
 cfg.rnn_bi_direction = True
+cfg.is_coverage = True
+if cfg.is_coverage:
+    cfg.attn_method = 'coverage'
+else:
+    cfg.attn_method = 'general'
 #
 
 # training hyper-parameters config

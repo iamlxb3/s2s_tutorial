@@ -29,6 +29,7 @@ def words_2_index(words, vocab, names, punctuations, unk_index, eos_index):
                 index = unk_index
             indices.append(index)
     indices.append(eos_index)
+    indices = ','.join(indices)
     return indices
 
 
