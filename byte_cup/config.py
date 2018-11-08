@@ -65,7 +65,7 @@ cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1
 cfg.share_embedding = True # encoder and decoder share the same embedding layer
 cfg.softmax_share_embedd = True
 cfg.rnn_bi_direction = True
-cfg.is_coverage = True
+cfg.is_coverage = False
 if cfg.is_coverage:
     cfg.attn_method = 'coverage'
 else:
