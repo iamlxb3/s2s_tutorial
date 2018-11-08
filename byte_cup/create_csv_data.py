@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
 import pickle
+import ntpath
 import string
 import torch
 import glob
 import ipdb
 import sys
+import re
 
 sys.path.append('..')
 
@@ -31,12 +33,14 @@ def words_2_index(words, vocab, names, punctuations, unk_index, eos_index):
 
 
 def save_x_y_npy(vocab, glove_dict=None):
+
     # ['<NAME>', '<NOTALPHA>', '<UNK>', '<SOS>', '<EOS>', '', 'the', ',', 'to', 'of']
 
     punctuations = set(string.punctuation)
     names = read_all_names()
 
     txts = glob.glob(os.path.join('/Users/pjs/byte_play/data/bytecup2018/', '*.txt'))
+    txts = [txt for txt in txts if re.findall(r'[0-9]+', ntpath.basename(txt))]
 
     train_csv_path = '/Users/pjs/byte_play/data/bytecup2018/train.csv'
     test_csv_path = '/Users/pjs/byte_play/data/bytecup2018/test.csv'
@@ -77,6 +81,26 @@ def save_x_y_npy(vocab, glove_dict=None):
     train_df.to_csv(train_csv_path, index=False)
     test_df.to_csv(test_csv_path, index=False)
 
+    # for test, TODO, add more in the future
+    df = {'uid': [], 'source': []}
+    val_set_txt_path = '/Users/pjs/byte_play/data/bytecup2018/bytecup.corpus.validation_set.txt'
+    val_set_save_path = '/Users/pjs/byte_play/data/bytecup2018/validation_set.csv'
+
+    with open(val_set_txt_path, 'r') as f:
+        for i, line in enumerate(f):
+            line_dict = eval(line)
+
+            content = line_dict.get('content', '')
+            uid = line_dict['id']
+            content_words = process_sentence_for_body(content)
+            content_indices = words_2_index(content_words, vocab, names, punctuations, unk_index, eos_index)
+            df['uid'].append(uid)
+            df['source'].append(content_indices)
+
+    df = pd.DataFrame(df)
+    df.to_csv(val_set_save_path, index=False)
+    print("Save bytecup.corpus.validation_set csv to {}".format(val_set_save_path))
+    #
 
 def glove_dict_get():
     glove_txt_path = '/Users/pjs/byte_play/embeddings/glove.840B.300d.txt'

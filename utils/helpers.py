@@ -50,6 +50,12 @@ def model_get(cfg):
         elif cfg.model_type == 'basic_attn':
             decoder = AttnDecoderRNN('general', target_vocab_len, decoder_input_dim, decoder_hidden_dim,
                                      softmax_share_embedd=cfg.softmax_share_embedd).to(cfg.device)
+
+        # share embedding
+        if cfg.share_embedding:
+            decoder.embedding = encoder.embedding
+        #
+
         print('model initialization ok!')
     #
 

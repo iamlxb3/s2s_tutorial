@@ -1,8 +1,7 @@
 """
 TODOLIST:
 1. add attention display
-2. add bi-gru function
-3. see https://github.com/ymfa/seq2seq-summarizer    pointer-generator source code
+2. add bi-gry function
 
 try pin_memory to speed up
 """
@@ -36,7 +35,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = None
+    N = 100
     if N is None:
         N = 999999999
     #
@@ -63,6 +62,7 @@ def main():
     val_index = int(val_percent * len(X))
     train_X, train_Y, train_uids = X[val_index:], Y[val_index:], uids[val_index:]
     val_X, val_Y, val_uids = X[:val_index], Y[:val_index], uids[:val_index]
+    print("Split train/val done!")
     #
 
     # get generator
