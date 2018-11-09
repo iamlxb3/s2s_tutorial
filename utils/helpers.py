@@ -10,6 +10,8 @@ sys.path.append("..")
 from funcs.encoder import Encoder
 from funcs.decoder import DecoderRnn
 from funcs.decoder import AttnDecoderRNN
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 
 
 def pos_encode(pos, dim):
@@ -193,7 +195,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                 input_tensor = input_tensors[batch]
                 word_pointer_pos[batch][word_index][:input_tensor.size(1)] = input_tensor == word_index
     #
-
+    attn_weights = []
     for t in range(target_max_len):
 
         # (1.) basic rnn
@@ -205,16 +207,17 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
             if cfg.is_coverage:
                 if t != 0:
                     coverage_mask = coverage_mask_list[t]
-                    coverage_loss_t = torch.sum(torch.min(coverage_vector, attn_weights.squeeze(1)), 1)
+                    coverage_loss_t = torch.sum(torch.min(coverage_vector, attn_weight_t.squeeze(1)), 1)
                     coverage_loss_t = coverage_loss_t[coverage_mask]
                     coverage_loss_t = torch.sum(coverage_loss_t)
                     coverage_loss = coverage_loss + coverage_loss_t
-                    coverage_vector = coverage_vector + attn_weights.squeeze(0)
+                    coverage_vector = coverage_vector + attn_weight_t.squeeze(0)
                     # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
 
-            decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
+            decoder_output, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
                                                                    coverage=coverage_vector,
                                                                    word_pointer_pos=word_pointer_pos)
+            attn_weights.append(attn_weight_t)
 
         # decoder_output = decoder_output.squeeze(0)
 
@@ -246,6 +249,30 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
 
     if is_test:
-        return loss, target_max_len, decoded_outputs
+        return loss, target_max_len, decoded_outputs, attn_weights
 
     return loss, target_max_len
+
+def plot_attentions(attn_weights, src, target):
+    """
+
+    :param attn_weights: M x N , M: length of the target
+    :param src:
+    :param target:
+    :return:
+    """
+    attn_weights = torch.cat(attn_weights).numpy()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(attn_weights , cmap='bone')
+    fig.colorbar(cax)
+    # Set up axes
+    ax.set_xticklabels(['']+src, rotation=90)
+    ax.set_yticklabels(['']+target)
+
+    # Show label at every tick
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    plt.show()
+

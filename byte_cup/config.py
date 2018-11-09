@@ -12,7 +12,7 @@ cfg = edict()
 # other config
 cfg.verbose = True
 cfg.load_model = False
-cfg.model_type = 'basic_attn' # basic_rnn, basic_attn
+cfg.model_type = 'basic_attn'  # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #
@@ -57,14 +57,14 @@ cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set)
 
 # model hyper-parameters
 dim = 256
-cfg.rnn_type = 'gru' # rnn
+cfg.rnn_type = 'gru'  # rnn
 cfg.encoder_input_dim = dim
 cfg.encoder_hidden_dim = dim
 cfg.decoder_input_dim = dim
 cfg.decoder_hidden_dim = dim
 cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
 cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
-cfg.share_embedding = True # encoder and decoder share the same embedding layer
+cfg.share_embedding = True  # encoder and decoder share the same embedding layer
 cfg.softmax_share_embedd = True
 cfg.encoder_bi_direction = True
 cfg.is_coverage = False

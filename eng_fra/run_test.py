@@ -7,10 +7,12 @@ from torch.utils.data import DataLoader
 from funcs.eval_predict import bleu_compute
 from funcs.eval_predict import rogue_compute
 from funcs.eval_predict import predict_on_test
+from utils.helpers import plot_attentions
 import numpy as np
 import torch
+import ipdb
 from config import cfg
-from config import fra_vocab
+from config import fra_vocab, en_vocab
 
 
 def predict():
@@ -22,10 +24,11 @@ def predict():
     #
 
     seq_csv_path = cfg.test_seq_csv_path
-
-    X = pd.read_csv(seq_csv_path)['source'].values
-    Y = pd.read_csv(seq_csv_path)['target'].values
-    uids = pd.read_csv(seq_csv_path)['uid'].values
+    df = pd.read_csv(seq_csv_path)
+    X = df['source'].values
+    Y = df['target'].values
+    uids = df['uid'].values
+    uid_dict = dict(zip(df.uid, df.source))
 
     # get generator
     test_generator = EnFraDataSet(X, Y, uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
@@ -40,7 +43,9 @@ def predict():
     bleus = []
 
     for i, (src_tensor, target_tensor, uid) in enumerate(test_loader):
-        loss, decoded_words, target_words = predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, fra_vocab)
+        src_words = uid_dict[int(uid)].split(',')
+        src_words = [en_vocab[int(index)] for index in src_words]
+        loss, decoded_words, target_words, attn_weights = predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, fra_vocab)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)
@@ -59,6 +64,9 @@ def predict():
         test_loss.append(loss)
         rogues.append(rogue)
         bleus.append(bleu)
+
+        # plot attentions
+        plot_attentions(attn_weights, src_words, decoded_words)
 
     print("test_loss: ", np.average(test_loss))
     print("rogues: ", np.average(rogues))

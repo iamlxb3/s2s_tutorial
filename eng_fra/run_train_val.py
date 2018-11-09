@@ -40,7 +40,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = None
+    N = 100
     if N is None:
         N = 999999999
     #

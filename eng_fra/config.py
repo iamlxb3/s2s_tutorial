@@ -58,19 +58,30 @@ cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set)
 
 # model hyper-parameters
 dim = 256
+cfg.rnn_type = 'rnn'
 cfg.encoder_input_dim = dim
 cfg.encoder_hidden_dim = dim
 cfg.decoder_input_dim = dim
 cfg.decoder_hidden_dim = dim
 cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
 cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
-cfg.softmax_share_embedd = True
-cfg.rnn_bi_direction = True
+cfg.softmax_share_embedd = False
+cfg.share_embedding = False  # encoder and decoder share the same embedding layer
+cfg.encoder_bi_direction = False
+cfg.is_coverage = False
+cfg.coverage_loss_coeff = 0.0
+cfg.is_point_generator = False
+
+if cfg.is_coverage:
+    cfg.attn_method = 'coverage'
+else:
+    cfg.attn_method = 'general'
+#
 #
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 20
+cfg.epoches = 1
 cfg.batch_size = 64
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
