@@ -153,8 +153,6 @@ class AttnDecoderRNN(nn.Module):
         concat_output = torch.tanh(self.concat(concat_input))
         # Predict next word using Luong eq. 6
 
-
-
         # ADD BY PJS, out & embedding weight sharing
         if self.softmax_share_embedd:
             # shape: vocab_size x hidden dim
@@ -166,9 +164,8 @@ class AttnDecoderRNN(nn.Module):
         # add pointer-generator
         if self.is_pg:
             pg_prob = self.pg(concat_input)
-            non_pg_prob = 1 - pg_prob
             pg_vocab_prob = torch.bmm(word_pointer_pos, torch.transpose(attn_weights, 2, 1)).squeeze(2)
-            output = pg_vocab_prob * pg_prob + output * non_pg_prob
+            output = pg_vocab_prob * pg_prob + output * (1 - pg_prob)
         #
 
         output = F.log_softmax(output, dim=1)
