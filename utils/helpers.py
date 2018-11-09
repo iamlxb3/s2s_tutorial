@@ -207,7 +207,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
             decoder_input_t = target_tensor_t
 
         loss += criterion(decoder_output, target_tensor_t.squeeze(1))
-        loss += coverage_loss
+        loss += coverage_loss * cfg.coverage_loss_coeff
 
     # if verbose:
     #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]

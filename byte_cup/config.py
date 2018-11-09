@@ -67,6 +67,8 @@ cfg.share_embedding = True # encoder and decoder share the same embedding layer
 cfg.softmax_share_embedd = True
 cfg.encoder_bi_direction = True
 cfg.is_coverage = False
+cfg.coverage_loss_coeff = 0.2
+
 if cfg.is_coverage:
     cfg.attn_method = 'coverage'
 else:
