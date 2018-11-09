@@ -29,7 +29,7 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
 
     # decode
     loss, target_max_len = decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden,
-                                       use_teacher_forcing, decoder)
+                                       use_teacher_forcing, decoder, input_tensor=input_tensor)
     #
 
     # calculate gradient & update parameters

@@ -43,7 +43,7 @@ class Attn(torch.nn.Module):
             self.v = torch.nn.Parameter(torch.FloatTensor(hidden_size))
         elif self.method == 'coverage':
             self.attn = torch.nn.Linear(self.hidden_size, hidden_size)
-            self.coverage_param =  torch.nn.Linear(1, 1)
+            self.coverage_param = torch.nn.Linear(1, 1)
 
     def dot_score(self, hidden, encoder_output):
         return torch.sum(hidden * encoder_output, dim=2)
@@ -79,9 +79,25 @@ class Attn(torch.nn.Module):
         return F.softmax(attn_energies, dim=1).unsqueeze(1)
 
 
+# pointer-generator
+class PointerGenerator(nn.Module):
+    """
+    inspired by "Get To The Point: Summarization with Pointer-Generator Networks"
+    """
+
+    def __init__(self, conca_dim):
+        super(PointerGenerator, self).__init__()
+        self.conca = nn.Linear(conca_dim, 1)
+
+    def forward(self, conca_v):
+        prob = F.sigmoid(self.conca(conca_v))
+        # ADD assertion
+        return prob
+
+
 class AttnDecoderRNN(nn.Module):
     def __init__(self, attn_model, vocab_size, input_dim, hidden_size, n_layers=1, dropout=0.1,
-                 softmax_share_embedd=False):
+                 softmax_share_embedd=False, is_point_generator=False, pad_token=None):
         super(AttnDecoderRNN, self).__init__()
 
         # Keep for reference
@@ -89,6 +105,8 @@ class AttnDecoderRNN(nn.Module):
         self.hidden_size = hidden_size
         self.n_layers = n_layers
         self.dropout = dropout
+        self.vocab_size = vocab_size
+        self.pad_token = pad_token
 
         # Define layers
         self.embedding = nn.Embedding(vocab_size, input_dim)
@@ -103,7 +121,11 @@ class AttnDecoderRNN(nn.Module):
             self.embedding_project = torch.nn.init.xavier_uniform_(
                 torch.randn((hidden_size, input_dim), requires_grad=True))
 
-    def forward(self, input_step, last_hidden, encoder_outputs, coverage=None):
+        self.is_pg = is_point_generator
+        if is_point_generator:
+            self.pg = PointerGenerator(hidden_size * 2)
+
+    def forward(self, input_step, last_hidden, encoder_outputs, coverage=None, word_pointer_pos=None):
         """
         :param input_step:
         :param last_hidden:
@@ -131,6 +153,8 @@ class AttnDecoderRNN(nn.Module):
         concat_output = torch.tanh(self.concat(concat_input))
         # Predict next word using Luong eq. 6
 
+
+
         # ADD BY PJS, out & embedding weight sharing
         if self.softmax_share_embedd:
             # shape: vocab_size x hidden dim
@@ -138,6 +162,14 @@ class AttnDecoderRNN(nn.Module):
             output = concat_output @ output_weights
         else:
             output = self.out(concat_output)
+
+        # add pointer-generator
+        if self.is_pg:
+            pg_prob = self.pg(concat_input)
+            non_pg_prob = 1 - pg_prob
+            pg_vocab_prob = torch.bmm(word_pointer_pos, torch.transpose(attn_weights, 2, 1)).squeeze(2)
+            output = pg_vocab_prob * pg_prob + output * non_pg_prob
+        #
 
         output = F.log_softmax(output, dim=1)
         # Return output and final hidden state

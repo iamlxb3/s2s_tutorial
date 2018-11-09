@@ -42,11 +42,12 @@ cfg.src_pad_token = src_pad_token
 cfg.target_SOS_token = target_SOS_token
 cfg.target_EOS_token = target_EOS_token
 cfg.target_pad_token = target_pad_token
+cfg.vocab_size = len(vocab)
 #
 
 # data loader config
 cfg.num_workers = 8  # num workers for data-loader
-cfg.data_shuffle = True
+cfg.data_shuffle = False
 #
 
 # model path config
@@ -68,6 +69,7 @@ cfg.softmax_share_embedd = True
 cfg.encoder_bi_direction = True
 cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.2
+cfg.is_point_generator = True
 
 if cfg.is_coverage:
     cfg.attn_method = 'coverage'
@@ -78,7 +80,7 @@ else:
 # training hyper-parameters config
 cfg.lr = 1e-3
 cfg.epoches = 1
-cfg.batch_size = 1
+cfg.batch_size = 2
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)

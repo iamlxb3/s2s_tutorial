@@ -51,7 +51,9 @@ def model_get(cfg):
             decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
         elif cfg.model_type == 'basic_attn':
             decoder = AttnDecoderRNN(cfg.attn_method, target_vocab_len, decoder_input_dim, decoder_hidden_dim,
-                                     softmax_share_embedd=cfg.softmax_share_embedd).to(cfg.device)
+                                     softmax_share_embedd=cfg.softmax_share_embedd,
+                                     is_point_generator=cfg.is_point_generator,
+                                     pad_token=cfg.target_pad_token).to(cfg.device)
 
         # share embedding
         if cfg.share_embedding:
@@ -75,7 +77,7 @@ def _actual_seq_length_compute(input_tensor, batch_size, src_pad_token):
     seq_lens = []
     indices = []
     for batch_i in range(batch_size):
-        seq_len = input_tensor[0].squeeze(1)
+        seq_len = input_tensor[batch_i].squeeze(1)
         seq_len = len([x for x in seq_len if x != src_pad_token])
         seq_lens.append(seq_len)
         indices.append(batch_i)
@@ -142,7 +144,7 @@ def encode_func(cfg, input_tensor, encoder):
 
 
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
-                is_test=False):
+                is_test=False, input_tensor=None):
     # load config
     verbose = cfg.verbose
     target_SOS_token = cfg.target_SOS_token
@@ -153,6 +155,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     criterion = cfg.criterion
 
     # add coverage
+    coverage_vector = None
     coverage_loss = 0
     if cfg.is_coverage:
         coverage_vector = torch.zeros(encoder_outputs.size(1), encoder_outputs.size(0))
@@ -164,12 +167,32 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
         #
     #
 
+    # pointer_generator
+
+    #
+
     if verbose or is_test:
         decoded_outputs = []
 
     # initialize decoder_hidden, decoder_input_0
     decoder_hidden = encoder_last_hidden
     decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * target_SOS_token).long().to(device)
+
+    # point-generator
+    word_pointer_pos = None
+    if cfg.is_point_generator:
+        batch_size = cfg.batch_size
+        word_pointer_pos = torch.zeros((batch_size, cfg.vocab_size, encoder_outputs.size(0)))
+        input_tensors = []
+        for batch in range(batch_size):
+            batch_tensor = input_tensor[batch][input_tensor[batch] != cfg.src_pad_token].unsqueeze(0)
+            input_tensors.append(batch_tensor)
+
+        for word_index in range(cfg.vocab_size):
+            for batch in range(batch_size):
+                input_tensor = input_tensors[batch]
+                word_pointer_pos[batch][word_index][:input_tensor.size(1)] = input_tensor == word_index
+    #
 
     for t in range(target_max_len):
 
@@ -188,10 +211,10 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                     coverage_loss = coverage_loss + coverage_loss_t
                     coverage_vector = coverage_vector + attn_weights.squeeze(0)
                     # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
-                decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
-                                                                       coverage=coverage_vector)
-            else:
-                decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs)
+
+            decoder_output, decoder_hidden, attn_weights = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
+                                                                   coverage=coverage_vector,
+                                                                   word_pointer_pos=word_pointer_pos)
 
         # decoder_output = decoder_output.squeeze(0)
 

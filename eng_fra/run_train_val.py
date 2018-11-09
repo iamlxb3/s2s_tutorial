@@ -10,6 +10,7 @@ try pin_memory to speed up
 """
 import random
 import sys
+import torch
 import pandas as pd
 import argparse
 
@@ -33,6 +34,7 @@ def args_parse():
 
 
 def main():
+
     # TODO, add parsing
     args = args_parse()
     #
@@ -58,6 +60,7 @@ def main():
     uids = pd.read_csv(csv_path)['uid'].values[:N]
 
     random.seed(1)  # TODO, add shuffle
+    torch.manual_seed(1)
     shuffled_X_Y_uids = list(zip(X, Y, uids))
     random.shuffle(shuffled_X_Y_uids)
     X, Y, uids = zip(*shuffled_X_Y_uids)
