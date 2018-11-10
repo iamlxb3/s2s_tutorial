@@ -183,9 +183,22 @@ def greedy_decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hid
                                                                       word_pointer_pos=word_pointer_pos)
             attn_weights.append(attn_weight_t)
 
+        # gather decoder output
+        decoder_output.append(decoder_output_t)
+        #
+
+        # ipdb> decoder_input_t, torch.Size([4, 1])
+        # tensor([[  4],
+        #         [  2],
+        #         [ 12],
+        #         [  2]])
+
         if not use_teacher_forcing:
-            topv, topi = decoder_output_t.topk(1)
-            decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
+            if cfg.decode_mode == 'beam_search':
+                decoder_input_t = beam_search(cfg, decoder_output, cfg.beam_width)
+            elif cfg.decode_mode == 'greedy':
+                topv, topi = decoder_output_t.topk(1)
+                decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
         else:
             decoder_input_t = target_tensor[:, t, :]
 
@@ -194,129 +207,42 @@ def greedy_decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hid
             coverage_loss += coverage_loss_t
         #
 
-        # gather decoder output
-        decoder_output.append(decoder_output_t)
-        #
     return decoder_output, coverage_loss, attn_weights
 
 
-class BeamSearchNode(object):
-    def __init__(self, hiddenstate, previousNode, wordId, logProb, length):
-        '''
-        :param hiddenstate:
-        :param previousNode:
-        :param wordId:
-        :param logProb:
-        :param length:
-        '''
-        self.h = hiddenstate
-        self.prevNode = previousNode
-        self.wordid = wordId
-        self.logp = logProb
-        self.leng = length
-
-    def eval(self, alpha=1.0):
-        reward = 0
-        # Add here a function for shaping a reward
-
-        return self.logp / float(self.leng - 1 + 1e-6) + alpha * reward
+# beam search
+def beam_search(cfg, data, k):
 
 
-def beam_decode(cfg, target_tensor, encoder_last_hidden, encoder_outputs):
-    '''
-        :param target_tensor: target indexes tensor of shape [B, T] where B is the batch size and T is the maximum length of the output sentence
-        :param decoder_hidden: input tensor of shape [1, B, H] for start of the decoding
-        :param encoder_outputs: if you are using attention mechanism you can pass encoder outputs, [T, B, H] where T is the maximum length of input sentence
-        :return: decoded_batch
-        '''
+    # TODO, implement beam search in batch
+    batch_data = []
+    for i in range(cfg.batch_size):
+        data_1_batch = []
+        for tensor_t in data:
+            data_1_batch.append(list(tensor_t[i].detach().numpy()))
+        batch_data.append(data_1_batch)
 
-    beam_width = 10
-    topk = 1  # how many sentence do you want to generate
-    decoded_batch = []
-    decoder_hiddens = encoder_last_hidden
+    decoder_input_t = []
 
-    # decoding goes sentence by sentence
-    for idx in range(target_tensor.size(0)):
-        if isinstance(decoder_hiddens, tuple):  # LSTM case
-            decoder_hidden = (decoder_hiddens[0][:, idx, :].unsqueeze(0), decoder_hiddens[1][:, idx, :].unsqueeze(0))
-        else:
-            decoder_hidden = decoder_hiddens[:, idx, :].unsqueeze(0)
-        encoder_output = encoder_outputs[:, idx, :].unsqueeze(1)
+    for data in batch_data:
+        sequences = [[list(), 1.0]]
+        # walk over each step in sequence
+        for row in data:
+            all_candidates = list()
+            # expand each current candidate
+            for i in range(len(sequences)):
+                seq, score = sequences[i]
+                for j in range(len(row)):
+                    candidate = [seq + [j], score * row[j]]
+                    all_candidates.append(candidate)
+            # order all candidates by score
+            ordered = sorted(all_candidates, key=lambda tup: tup[1])
+            # select k best
+            sequences = ordered[:k]
+        decoder_input_t.append([sorted(sequences, key=lambda x:x[1], reverse=True)[0][0][-1]])
 
-        # Start with the start of the sentence token
-        decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * cfg.target_SOS_token).long().to(cfg.evice)
-
-        # Number of sentence to generate
-        endnodes = []
-        number_required = min((topk + 1), topk - len(endnodes))
-
-        # starting node -  hidden vector, previous node, word id, logp, length
-        node = BeamSearchNode(decoder_hidden, None, decoder_input_t, 0, 1)
-        nodes = PriorityQueue()
-
-        # start the queue
-        nodes.put((-node.eval(), node))
-        qsize = 1
-
-        # start beam search
-        while True:
-            # give up when decoding takes too long
-            if qsize > 2000: break
-
-            # fetch the best node
-            score, n = nodes.get()
-            decoder_input = n.wordid
-            decoder_hidden = n.h
-
-            if n.wordid.item() == cfg.target_EOS_token and n.prevNode != None:
-                endnodes.append((score, n))
-                # if we reached maximum # of sentences required
-                if len(endnodes) >= number_required:
-                    break
-                else:
-                    continue
-
-            # decode for one step using decoder
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_output)
-
-            # PUT HERE REAL BEAM SEARCH OF TOP
-            log_prob, indexes = torch.topk(decoder_output, beam_width)
-            nextnodes = []
-
-            for new_k in range(beam_width):
-                decoded_t = indexes[0][new_k].view(1, -1)
-                log_p = log_prob[0][new_k].item()
-
-                node = BeamSearchNode(decoder_hidden, n, decoded_t, n.logp + log_p, n.leng + 1)
-                score = -node.eval()
-                nextnodes.append((score, node))
-
-            # put them into queue
-            for i in range(len(nextnodes)):
-                score, nn = nextnodes[i]
-                nodes.put((score, nn))
-                # increase qsize
-            qsize += len(nextnodes) - 1
-
-        # choose nbest paths, back trace them
-        if len(endnodes) == 0:
-            endnodes = [nodes.get() for _ in range(topk)]
-
-        utterances = []
-        for score, n in sorted(endnodes, key=operator.itemgetter(0)):
-            utterance = []
-            utterance.append(n.wordid)
-            # back trace
-            while n.prevNode != None:
-                n = n.prevNode
-                utterance.append(n.wordid)
-
-            utterance = utterance[::-1]
-            utterances.append(utterance)
-
-        decoded_batch.append(utterances)
-
-    return decoded_batch
+    decoder_input_t = torch.tensor(decoder_input_t)
+    return decoder_input_t
 
 
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
@@ -325,7 +251,6 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     verbose = cfg.verbose
     target_pad_token = cfg.target_pad_token
 
-    device = cfg.device
     target_max_len = target_tensor.size(1)
     criterion = cfg.criterion
 
@@ -359,14 +284,13 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #
 
     # decode
-    if cfg.decode_mode == 'greedy':
-        decoder_output, coverage_loss, attn_weights = greedy_decode(cfg, decoder, encoder_outputs, target_tensor,
-                                                                    encoder_last_hidden, target_max_len,
-                                                                    use_teacher_forcing,
-                                                                    coverage_loss=coverage_loss,
-                                                                    coverage_vector=coverage_vector,
-                                                                    coverage_mask_list=coverage_mask_list,
-                                                                    word_pointer_pos=word_pointer_pos)
+    decoder_output, coverage_loss, attn_weights = greedy_decode(cfg, decoder, encoder_outputs, target_tensor,
+                                                                encoder_last_hidden, target_max_len,
+                                                                use_teacher_forcing,
+                                                                coverage_loss=coverage_loss,
+                                                                coverage_vector=coverage_vector,
+                                                                coverage_mask_list=coverage_mask_list,
+                                                                word_pointer_pos=word_pointer_pos)
     #
 
     # decoder_output, target_tensor,
