@@ -148,6 +148,7 @@ def encode_func(cfg, input_tensor, encoder):
 def greedy_decode():
     pass
 
+
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
                 is_test=False, input_tensor=None):
     # load config
@@ -171,13 +172,6 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
             coverage_mask_list.append(mask.view(-1))
         #
     #
-
-    # pointer_generator
-
-    #
-
-    if verbose or is_test:
-        decoded_outputs = []
 
     # initialize decoder_hidden, decoder_input_0
     decoder_hidden = encoder_last_hidden
@@ -220,22 +214,15 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                     coverage_loss_t = 0
                     # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
             decoder_output_t, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
-                                                                   coverage=coverage_vector,
-                                                                   word_pointer_pos=word_pointer_pos)
+                                                                      coverage=coverage_vector,
+                                                                      word_pointer_pos=word_pointer_pos)
             attn_weights.append(attn_weight_t)
-
-        # decoder_output_t = decoder_output_t.squeeze(0)
-
-        if is_test:
-            decoded_outputs.append(decoder_output_t)
-
-        target_tensor_t = target_tensor[:, t, :]
 
         if not use_teacher_forcing:
             topv, topi = decoder_output_t.topk(1)
             decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
         else:
-            decoder_input_t = target_tensor_t
+            decoder_input_t = target_tensor[:, t, :]
 
         # accumulate coverage loss
         if cfg.is_coverage:
@@ -248,7 +235,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
 
     # decoder_output, target_tensor,
     loss += criterion(torch.cat(decoder_output, 0), target_tensor.view(-1))
-    loss += coverage_loss / target_max_len
+    loss += coverage_loss / target_max_len  # not accurate because of the padding
 
     # if verbose:
     #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
@@ -264,9 +251,10 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
 
     if is_test:
-        return loss, target_max_len, decoded_outputs, attn_weights
+        return loss, target_max_len, decoder_output, attn_weights
 
     return loss, target_max_len
+
 
 def plot_attentions(attn_weights, src, target):
     """
@@ -280,14 +268,13 @@ def plot_attentions(attn_weights, src, target):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    cax = ax.matshow(attn_weights , cmap='bone')
+    cax = ax.matshow(attn_weights, cmap='bone')
     fig.colorbar(cax)
     # Set up axes
-    ax.set_xticklabels(['']+src, rotation=90)
-    ax.set_yticklabels(['']+target)
+    ax.set_xticklabels([''] + src, rotation=90)
+    ax.set_yticklabels([''] + target)
 
     # Show label at every tick
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     plt.show()
-
