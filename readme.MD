@@ -11,4 +11,4 @@ Some features:
 [ ] attention \
 [ ] encoder-decoder \
 [ ] pointer-generator \
-[ ] coverage \
+[ ] coverage
