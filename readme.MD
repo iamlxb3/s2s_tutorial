@@ -8,7 +8,7 @@ A repo for text summarization and machine translation, still in progress.
 
 Some features:
 
-[] attention
-[] encoder-decoder
-[] pointer-generator
-[] coverage
+[ ] attention \
+[ ] encoder-decoder \
+[ ] pointer-generator \
+[ ] coverage \
