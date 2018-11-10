@@ -45,7 +45,8 @@ def predict():
     for i, (src_tensor, target_tensor, uid) in enumerate(test_loader):
         src_words = uid_dict[int(uid)].split(',')
         src_words = [en_vocab[int(index)] for index in src_words]
-        loss, decoded_words, target_words, attn_weights = predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, fra_vocab)
+        loss, decoded_words, target_words, attn_weights = predict_on_test(cfg, encoder, decoder, src_tensor,
+                                                                          target_tensor, fra_vocab)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)

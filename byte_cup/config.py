@@ -84,4 +84,5 @@ cfg.batch_size = 2
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
+cfg.decode_mode = 'greedy' # beam
 #

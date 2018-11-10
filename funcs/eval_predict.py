@@ -41,8 +41,9 @@ def rogue_compute(reference, summary):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def _decode_predict_index(decoded_outputs, vocab):
+def _decode_predict_index(decoded_outputs, vocab, mode):
     # decoded_outputs -> words
+    # TODO, add beam search
     decoded_words = []
     for decoder_output in decoded_outputs:
         _, topi = decoder_output.data.topk(1)
@@ -82,7 +83,7 @@ def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, vocab):
         loss = loss.item() / target_max_len
 
         # decode predict word index into words
-        decoded_words = _decode_predict_index(decoded_outputs, vocab)
+        decoded_words = _decode_predict_index(decoded_outputs, vocab, cfg.decode_mode)
 
         # decoded_outputs -> words
         target_words = _decode_target_index(target_tensor, vocab)

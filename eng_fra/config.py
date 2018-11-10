@@ -68,7 +68,7 @@ cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1
 cfg.softmax_share_embedd = False
 cfg.share_embedding = False  # encoder and decoder share the same embedding layer
 cfg.encoder_bi_direction = False
-cfg.is_coverage = False
+cfg.is_coverage = True
 cfg.coverage_loss_coeff = 0.0
 cfg.is_point_generator = False
 
@@ -82,8 +82,9 @@ else:
 # training hyper-parameters config
 cfg.lr = 1e-3
 cfg.epoches = 1
-cfg.batch_size = 64
+cfg.batch_size = 4
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
+cfg.decode_mode = 'greedy' # beam
 #

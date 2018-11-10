@@ -145,6 +145,9 @@ def encode_func(cfg, input_tensor, encoder):
     return encoder_outputs, encoder_hidden
 
 
+def greedy_decode():
+    pass
+
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
                 is_test=False, input_tensor=None):
     # load config
@@ -158,8 +161,8 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
 
     # add coverage
     coverage_vector = None
-    coverage_loss = 0
     if cfg.is_coverage:
+        coverage_loss = 0
         coverage_vector = torch.zeros(encoder_outputs.size(1), encoder_outputs.size(0))
         # coverage mask
         coverage_mask_list = []
@@ -196,11 +199,13 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                 word_pointer_pos[batch][word_index][:input_tensor.size(1)] = input_tensor == word_index
     #
     attn_weights = []
+    decoder_output = []
+
     for t in range(target_max_len):
 
         # (1.) basic rnn
         if cfg.model_type == 'basic_rnn':
-            decoder_output, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
+            decoder_output_t, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
         # (2.) basic attn
         elif cfg.model_type == 'basic_attn':
             # coverage
@@ -210,30 +215,40 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                     coverage_loss_t = torch.sum(torch.min(coverage_vector, attn_weight_t.squeeze(1)), 1)
                     coverage_loss_t = coverage_loss_t[coverage_mask]
                     coverage_loss_t = torch.sum(coverage_loss_t)
-                    coverage_loss = coverage_loss + coverage_loss_t
-                    coverage_vector = coverage_vector + attn_weight_t.squeeze(0)
+                    coverage_vector = coverage_vector + attn_weight_t.squeeze(1)
+                elif t == 0:
+                    coverage_loss_t = 0
                     # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
-
-            decoder_output, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
+            decoder_output_t, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
                                                                    coverage=coverage_vector,
                                                                    word_pointer_pos=word_pointer_pos)
             attn_weights.append(attn_weight_t)
 
-        # decoder_output = decoder_output.squeeze(0)
+        # decoder_output_t = decoder_output_t.squeeze(0)
 
         if is_test:
-            decoded_outputs.append(decoder_output)
+            decoded_outputs.append(decoder_output_t)
 
         target_tensor_t = target_tensor[:, t, :]
 
         if not use_teacher_forcing:
-            topv, topi = decoder_output.topk(1)
+            topv, topi = decoder_output_t.topk(1)
             decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
         else:
             decoder_input_t = target_tensor_t
 
-        loss += criterion(decoder_output, target_tensor_t.squeeze(1))
-        loss += coverage_loss * cfg.coverage_loss_coeff
+        # accumulate coverage loss
+        if cfg.is_coverage:
+            coverage_loss += coverage_loss_t
+        #
+
+        # gather decoder output
+        decoder_output.append(decoder_output_t)
+        #
+
+    # decoder_output, target_tensor,
+    loss += criterion(torch.cat(decoder_output, 0), target_tensor.view(-1))
+    loss += coverage_loss / target_max_len
 
     # if verbose:
     #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
