@@ -4,6 +4,11 @@ https://danijar.com/tips-for-training-recurrent-neural-networks/ (Tips for Train
 https://machinelearningmastery.com/teacher-forcing-for-recurrent-neural-networks/ (Teacher-forcing)
 
 
-TODO:
+A repo for text summarization and machine translation, still in progress.
 
-\[ \] a dataloader with variable-size input
+Some features:
+
+[] attention
+[] encoder-decoder
+[] pointer-generator
+[] coverage
