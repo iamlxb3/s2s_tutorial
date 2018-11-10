@@ -42,6 +42,7 @@ def rogue_compute(reference, summary):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def _decode_predict_index(decoded_outputs, vocab, mode):
+
     # decoded_outputs -> words
     # TODO, add beam search
     decoded_words = []
