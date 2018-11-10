@@ -80,8 +80,6 @@ def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, vocab):
         loss, target_max_len, decoded_outputs, attn_weights = decode_func(cfg, loss, target_tensor, encoder_outputs,
                                                                           encoder_last_hidden, False,
                                                                           decoder, is_test=True)
-        loss = loss.item() / target_max_len
-
         # decode predict word index into words
         decoded_words = _decode_predict_index(decoded_outputs, vocab, cfg.decode_mode)
 
@@ -103,6 +101,5 @@ def eval_on_val(cfg, encoder, decoder, src_tensor, target_tensor, use_teacher_fo
         loss = 0
         loss, target_max_len = decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden,
                                            use_teacher_forcing, decoder)
-        avg_batch_loss = loss.item() / target_max_len
 
-        return avg_batch_loss
+        return loss

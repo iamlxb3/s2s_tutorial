@@ -35,10 +35,10 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
     # calculate gradient & update parameters
     loss.backward()
     optimizer.step()
-    avg_batch_loss = loss.item() / target_max_len
     #
 
-    return avg_batch_loss
+    # this is the reduced form of loss
+    return loss
 
 
 def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path):
