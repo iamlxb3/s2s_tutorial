@@ -1,13 +1,11 @@
-目前还是在eng_fra数据集上做调试
+bytecup 最初级的版本
 
-训练模型
-cd eng_fra
-python main.py
+使用方法：
 
-验证模型
-cd eng_fra
-python main.py
+cd byte_cup
 
+训练:
+python -m run_train_val.py
 
-# reference
-https://github.com/IBM/pytorch-seq2seq/blob/master/seq2seq/models/DecoderRNN.py
+测试:
+python -m run_test.py
