@@ -15,6 +15,7 @@ cfg.load_model = False
 cfg.model_type = 'basic_attn' # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
+cfg.plot_attn = False
 #
 
 # data-set config
@@ -83,10 +84,11 @@ else:
 cfg.lr = 1e-3
 cfg.epoches = 1
 cfg.batch_size = 4
+cfg.test_batch_size = 1
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
 cfg.decode_mode = 'beam_search' # beam_search, greedy
-cfg.beam_width = 4 #
+cfg.beam_width = 1 #
 
 #

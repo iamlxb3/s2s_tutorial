@@ -147,12 +147,13 @@ def encode_func(cfg, input_tensor, encoder):
     return encoder_outputs, encoder_hidden
 
 
-def greedy_decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
-                  use_teacher_forcing,
-                  coverage_loss=None,
-                  coverage_vector=None,
-                  coverage_mask_list=None,
-                  word_pointer_pos=None):
+def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
+            use_teacher_forcing,
+            coverage_loss=None,
+            coverage_vector=None,
+            coverage_mask_list=None,
+            word_pointer_pos=None,
+            is_test=False):
     # initialize decoder_hidden, decoder_input_0
     decoder_hidden = encoder_last_hidden
     decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * cfg.target_SOS_token).long().to(cfg.device)
@@ -194,8 +195,13 @@ def greedy_decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hid
         #         [  2]])
 
         if not use_teacher_forcing:
+            # TODO, optimise beam search
             if cfg.decode_mode == 'beam_search':
-                decoder_input_t = beam_search(cfg, decoder_output, cfg.beam_width)
+                if is_test:
+                    batch_size = cfg.test_batch_size
+                else:
+                    batch_size = cfg.batch_size
+                decoder_input_t = beam_search(batch_size, decoder_output, cfg.beam_width)
             elif cfg.decode_mode == 'greedy':
                 topv, topi = decoder_output_t.topk(1)
                 decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
@@ -211,18 +217,16 @@ def greedy_decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hid
 
 
 # beam search
-def beam_search(cfg, data, k):
-
-
+def beam_search(batch_size, tensor_data, k, return_last=True):
     # TODO, implement beam search in batch
     batch_data = []
-    for i in range(cfg.batch_size):
+    for i in range(batch_size):
         data_1_batch = []
-        for tensor_t in data:
+        for tensor_t in tensor_data:
             data_1_batch.append(list(tensor_t[i].detach().numpy()))
         batch_data.append(data_1_batch)
 
-    decoder_input_t = []
+    output = []
 
     for data in batch_data:
         sequences = [[list(), 1.0]]
@@ -233,16 +237,20 @@ def beam_search(cfg, data, k):
             for i in range(len(sequences)):
                 seq, score = sequences[i]
                 for j in range(len(row)):
-                    candidate = [seq + [j], score * row[j]]
+                    candidate = [seq + [j], score * -1 * row[j]]
                     all_candidates.append(candidate)
             # order all candidates by score
             ordered = sorted(all_candidates, key=lambda tup: tup[1])
             # select k best
             sequences = ordered[:k]
-        decoder_input_t.append([sorted(sequences, key=lambda x:x[1], reverse=True)[0][0][-1]])
+        if return_last:
+            best_seq = [sorted(sequences, key=lambda x:x[1], reverse=True)[0][0][-1]]
+        else:
+            best_seq = [sorted(sequences, key=lambda x: x[1], reverse=True)[0][0]]
+        output.append(best_seq)
 
-    decoder_input_t = torch.tensor(decoder_input_t)
-    return decoder_input_t
+    output = torch.tensor(output)
+    return output
 
 
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
@@ -284,13 +292,14 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #
 
     # decode
-    decoder_output, coverage_loss, attn_weights = greedy_decode(cfg, decoder, encoder_outputs, target_tensor,
-                                                                encoder_last_hidden, target_max_len,
-                                                                use_teacher_forcing,
-                                                                coverage_loss=coverage_loss,
-                                                                coverage_vector=coverage_vector,
-                                                                coverage_mask_list=coverage_mask_list,
-                                                                word_pointer_pos=word_pointer_pos)
+    decoder_output, coverage_loss, attn_weights = _decode(cfg, decoder, encoder_outputs, target_tensor,
+                                                          encoder_last_hidden, target_max_len,
+                                                          use_teacher_forcing,
+                                                          coverage_loss=coverage_loss,
+                                                          coverage_vector=coverage_vector,
+                                                          coverage_mask_list=coverage_mask_list,
+                                                          word_pointer_pos=word_pointer_pos,
+                                                          is_test=is_test)
     #
 
     # decoder_output, target_tensor,

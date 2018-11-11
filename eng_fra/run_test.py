@@ -67,7 +67,8 @@ def predict():
         bleus.append(bleu)
 
         # plot attentions
-        plot_attentions(attn_weights, src_words, decoded_words)
+        if cfg.plot_attn:
+            plot_attentions(attn_weights, src_words, decoded_words)
 
     print("test_loss: ", np.average(test_loss))
     print("rogues: ", np.average(rogues))

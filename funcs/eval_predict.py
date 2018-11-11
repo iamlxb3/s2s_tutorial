@@ -13,6 +13,7 @@ sys.path.append('..')
 from utils.helpers import lcsubstring_length
 from utils.helpers import encode_func
 from utils.helpers import decode_func
+from utils.helpers import beam_search
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,19 +42,27 @@ def rogue_compute(reference, summary):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def _decode_predict_index(decoded_outputs, vocab, mode):
-
-    # decoded_outputs -> words
-    # TODO, add beam search
+def _decode_predict_index(cfg, decoded_outputs, vocab):
     decoded_words = []
-    for decoder_output in decoded_outputs:
-        _, topi = decoder_output.data.topk(1)
-        word_index = int(topi[0][0])
-        word = vocab[word_index]
-        decoded_words.append(word)
-        if word == '<EOS>':
-            break
-    #
+
+    if cfg.decode_mode == 'greedy':
+        # decoded_outputs -> words
+        for decoder_output in decoded_outputs:
+            _, topi = decoder_output.data.topk(1)
+            word_index = int(topi[0][0])
+            word = vocab[word_index]
+            decoded_words.append(word)
+            if word == '<EOS>':
+                break
+        #
+    elif cfg.decode_mode == 'beam_search':
+        best_seq = beam_search(1, decoded_outputs, cfg.beam_width, return_last=False).view(-1)
+        for index in best_seq:
+            word = vocab[index]
+            decoded_words.append(word)
+            if word == '<EOS>':
+                break
+
     return decoded_words
 
 
@@ -82,7 +91,7 @@ def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, vocab):
                                                                           encoder_last_hidden, False,
                                                                           decoder, is_test=True)
         # decode predict word index into words
-        decoded_words = _decode_predict_index(decoded_outputs, vocab, cfg.decode_mode)
+        decoded_words = _decode_predict_index(cfg, decoded_outputs, vocab)
 
         # decoded_outputs -> words
         target_words = _decode_target_index(target_tensor, vocab)
