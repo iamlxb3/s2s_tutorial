@@ -68,9 +68,9 @@ cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1
 cfg.share_embedding = True  # encoder and decoder share the same embedding layer
 cfg.softmax_share_embedd = True
 cfg.encoder_bi_direction = True
-cfg.is_coverage = True
+cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.2
-cfg.is_point_generator = True
+cfg.is_point_generator = False
 
 if cfg.is_coverage:
     cfg.attn_method = 'coverage'
@@ -85,6 +85,6 @@ cfg.batch_size = 2
 cfg.use_teacher_forcing = True
 cfg.teacher_forcing_ratio = 0.3
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
-cfg.decode_mode = 'beam_search' # beam_search, greedy
+cfg.decode_mode = 'greedy' # beam_search, greedy
 cfg.beam_width = 1 #
 #
