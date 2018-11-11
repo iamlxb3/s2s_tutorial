@@ -149,7 +149,7 @@ def encode_func(cfg, input_tensor, encoder):
 
 def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
             use_teacher_forcing,
-            coverage_loss=None,
+            coverage_loss=0,
             coverage_vector=None,
             coverage_mask_list=None,
             word_pointer_pos=None,
@@ -264,8 +264,9 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
 
     # add coverage
     coverage_vector = None
+    coverage_mask_list=None
+    coverage_loss = 0
     if cfg.is_coverage:
-        coverage_loss = 0
         coverage_vector = torch.zeros(encoder_outputs.size(1), encoder_outputs.size(0))
         # coverage mask
         coverage_mask_list = []

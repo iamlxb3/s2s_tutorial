@@ -1,7 +1,5 @@
 """
 TODOLIST:
-1. add attention display
-2. add bi-gry function
 
 try pin_memory to speed up
 """
@@ -14,7 +12,7 @@ sys.path.append("..")
 from funcs.trainer import epoches_train
 from utils.helpers import model_get
 
-from funcs.gen import EnFraDataSet
+from funcs.gen import Seq2SeqDataSet
 from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
 from torch.optim import lr_scheduler
@@ -35,7 +33,7 @@ def main():
     #
 
     # TODO, temp, other configs
-    N = 100
+    N = 20
     if N is None:
         N = 999999999
     #
@@ -66,16 +64,16 @@ def main():
     #
 
     # get generator
-    train_generator = EnFraDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+    train_generator = Seq2SeqDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
+                                     cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     train_loader = DataLoader(train_generator,
                               batch_size=cfg.batch_size,
                               shuffle=cfg.data_shuffle,
                               num_workers=cfg.num_workers,
                               # pin_memory=True
                               )
-    val_generator = EnFraDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                 cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+    val_generator = Seq2SeqDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
+                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     val_loader = DataLoader(val_generator,
                             batch_size=cfg.batch_size,
                             shuffle=False,

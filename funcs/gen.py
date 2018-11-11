@@ -6,7 +6,7 @@ import ipdb
 import numpy as np
 
 
-class EnFraDataSet():
+class Seq2SeqDataSet():
     def __init__(self, X, Y, uids, x_pad_shape, y_pad_shape, src_pad_token, target_pad_token,
                  use_pretrain_embedding):
         self.X_train = X
