@@ -2,7 +2,7 @@ import pandas as pd
 import sys
 
 sys.path.append("..")
-from funcs.gen import EnFraDataSet
+from funcs.gen import Seq2SeqDataSet
 from torch.utils.data import DataLoader
 from funcs.eval_predict import bleu_compute
 from funcs.eval_predict import rogue_compute
@@ -11,8 +11,8 @@ from utils.helpers import plot_attentions
 import numpy as np
 import torch
 import ipdb
-from config import cfg
-from config import fra_vocab, en_vocab
+from eng_fra_config import cfg
+from eng_fra_config import fra_vocab, en_vocab
 
 
 def predict():
@@ -31,7 +31,7 @@ def predict():
     uid_dict = dict(zip(df.uid, df.source))
 
     # get generator
-    test_generator = EnFraDataSet(X, Y, uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
+    test_generator = Seq2SeqDataSet(X, Y, uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     test_loader = DataLoader(test_generator,
                              batch_size=1,

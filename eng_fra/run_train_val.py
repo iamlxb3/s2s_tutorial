@@ -18,7 +18,7 @@ sys.path.append("..")
 from funcs.trainer import epoches_train
 from utils.helpers import model_get
 
-from funcs.gen import EnFraDataSet
+from funcs.gen import Seq2SeqDataSet
 from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
 from torch.optim import lr_scheduler
@@ -71,7 +71,7 @@ def main():
     #
 
     # get generator
-    train_generator = EnFraDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
+    train_generator = Seq2SeqDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
                                    cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     train_loader = DataLoader(train_generator,
                               batch_size=cfg.batch_size,
@@ -79,7 +79,7 @@ def main():
                               num_workers=cfg.num_workers,
                               # pin_memory=True
                               )
-    val_generator = EnFraDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
+    val_generator = Seq2SeqDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
                                  cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     val_loader = DataLoader(val_generator,
                             batch_size=cfg.batch_size,
