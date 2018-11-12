@@ -25,7 +25,7 @@ class DecoderRnn(nn.Module):
         yt = torch.transpose(yt, 0, 1)
         output, hidden = self.rnn(yt, ht)
         output = F.log_softmax(self.out(output), dim=2)
-        return output, hidden
+        return output.squeeze(0), hidden
 
 
 # Decoder Attention
@@ -97,7 +97,7 @@ class PointerGenerator(nn.Module):
 
 class AttnDecoderRNN(nn.Module):
     def __init__(self, attn_model, vocab_size, input_dim, hidden_size, n_layers=1, dropout=0.1,
-                 softmax_share_embedd=False, is_point_generator=False, pad_token=None):
+                 softmax_share_embedd=False, pad_token=None):
         super(AttnDecoderRNN, self).__init__()
 
         # Keep for reference
@@ -111,7 +111,7 @@ class AttnDecoderRNN(nn.Module):
         # Define layers
         self.embedding = nn.Embedding(vocab_size, input_dim)
         self.embedding_dropout = nn.Dropout(dropout)
-        self.gru = nn.GRU(hidden_size, hidden_size, n_layers, dropout=(0 if n_layers == 1 else dropout))
+        self.gru = nn.GRU(input_dim, hidden_size, n_layers, dropout=(0 if n_layers == 1 else dropout))
         self.concat = nn.Linear(hidden_size * 2, hidden_size)
         self.out = nn.Linear(hidden_size, vocab_size)
         self.attn = Attn(attn_model, hidden_size)
@@ -120,10 +120,6 @@ class AttnDecoderRNN(nn.Module):
         if self.softmax_share_embedd:
             self.embedding_project = torch.nn.init.xavier_uniform_(
                 torch.randn((hidden_size, input_dim), requires_grad=True))
-
-        self.is_pg = is_point_generator
-        if is_point_generator:
-            self.pg = PointerGenerator(hidden_size * 2)
 
     def forward(self, input_step, last_hidden, encoder_outputs, coverage=None):
         """

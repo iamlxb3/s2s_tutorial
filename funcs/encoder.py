@@ -32,7 +32,6 @@ class Encoder(nn.Module):
         output, hidden = self.rnn(xt, ht)
         output = nn.utils.rnn.pad_packed_sequence(output)[0]  # 返回的seq长度可能和输入的不一样，大概是pad_packed的功能
         output = output.index_select(1, torch.tensor(sorted_indices))
-
         if self.bidirectional:
             output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:]
             hidden = hidden[:self.n_layers] # TODO, return the last hidden state, not 100% sure

@@ -11,8 +11,8 @@ from utils.helpers import plot_attentions
 import numpy as np
 import torch
 import ipdb
-from config import cfg
-from config import fra_vocab, vocab
+from s2s_config import cfg
+from s2s_config import vocab
 
 
 def predict():
@@ -25,6 +25,8 @@ def predict():
 
     seq_csv_path = cfg.test_seq_csv_path
     df = pd.read_csv(seq_csv_path)
+    mask = df['source'].apply(lambda x:len(x.split(','))) <= cfg.seq_max_len # filter by length
+    df = df[mask]
     X = df['source'].values
     Y = df['target'].values
     uids = df['uid'].values
@@ -46,7 +48,7 @@ def predict():
         src_words = uid_dict[int(uid)].split(',')
         src_words = [vocab[int(index)] for index in src_words]
         loss, decoded_words, target_words, attn_weights = predict_on_test(cfg, encoder, decoder, src_tensor,
-                                                                          target_tensor, fra_vocab)
+                                                                          target_tensor, vocab)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)

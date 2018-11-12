@@ -8,6 +8,7 @@ TODOLIST:
 
 try pin_memory to speed up
 """
+import ipdb
 import random
 import sys
 import torch
@@ -23,7 +24,7 @@ from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
 from torch.optim import lr_scheduler
 from torch import optim
-from config import cfg
+from s2s_config import cfg
 
 
 def args_parse():
@@ -39,25 +40,23 @@ def main():
     args = args_parse()
     #
 
-    # TODO, temp, other configs
-    N = 100
-    if N is None:
-        N = 999999999
-    #
-
     # load model
     encoder, decoder = model_get(cfg)
 
     # set optimizer & lr_scheduler
-    cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()))
+    cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=cfg.lr)
     cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-8)
     #
 
     # Split train / val, TODO
     csv_path = cfg.train_seq_csv_path
-    X = pd.read_csv(csv_path)['source'].values[:N]
-    Y = pd.read_csv(csv_path)['target'].values[:N]
-    uids = pd.read_csv(csv_path)['uid'].values[:N]
+    df = pd.read_csv(csv_path)
+    mask = df['source'].apply(lambda x:len(x.split(','))) <= cfg.seq_max_len # filter by length
+    df = df[mask]
+
+    X = df['source'].values
+    Y = df['target'].values
+    uids = df['uid'].values
 
     random.seed(1)  # TODO, add shuffle
     torch.manual_seed(1)

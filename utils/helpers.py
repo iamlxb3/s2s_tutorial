@@ -56,7 +56,6 @@ def model_get(cfg):
         elif cfg.model_type == 'basic_attn':
             decoder = AttnDecoderRNN(cfg.attn_method, target_vocab_len, decoder_input_dim, decoder_hidden_dim,
                                      softmax_share_embedd=cfg.softmax_share_embedd,
-                                     is_point_generator=cfg.is_point_generator,
                                      pad_token=cfg.target_pad_token).to(cfg.device)
 
         # share embedding
@@ -152,7 +151,8 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
             coverage_loss=0,
             coverage_vector=None,
             coverage_mask_list=None,
-            is_test=False):
+            is_test=False,
+            criterion=None):
     # initialize decoder_hidden, decoder_input_0
     decoder_hidden = encoder_last_hidden
     decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * cfg.target_SOS_token).long().to(cfg.device)
@@ -160,6 +160,7 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
     attn_weights = []
     decoder_output = []
 
+    loss_ = 0
     for t in range(target_max_len):
 
         # (1.) basic rnn
@@ -210,8 +211,9 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
         if cfg.is_coverage:
             coverage_loss += coverage_loss_t
         #
+        loss_ += criterion(decoder_output_t, target_tensor[:, t, :].squeeze(1))
 
-    return decoder_output, coverage_loss, attn_weights
+    return decoder_output, coverage_loss, attn_weights, loss_
 
 
 # beam search
@@ -252,7 +254,7 @@ def beam_search(batch_size, tensor_data, k, return_last=True):
 
 
 def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
-                is_test=False, input_tensor=None):
+                is_test=False):
     # load config
     verbose = cfg.verbose
     target_pad_token = cfg.target_pad_token
@@ -275,17 +277,20 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #
 
     # decode
-    decoder_output, coverage_loss, attn_weights = _decode(cfg, decoder, encoder_outputs, target_tensor,
+    decoder_output, coverage_loss, attn_weights, loss_ = _decode(cfg, decoder, encoder_outputs, target_tensor,
                                                           encoder_last_hidden, target_max_len,
                                                           use_teacher_forcing,
                                                           coverage_loss=coverage_loss,
                                                           coverage_vector=coverage_vector,
                                                           coverage_mask_list=coverage_mask_list,
-                                                          is_test=is_test)
+                                                          is_test=is_test,
+                                                          criterion=criterion)
     #
 
     # decoder_output, target_tensor,
-    loss += criterion(torch.cat(decoder_output, 0), target_tensor.view(-1))
+    #loss += criterion(torch.cat(decoder_output, 0), torch.transpose(target_tensor, 0, 1).contiguous().view(-1))
+    loss += loss_
+
     loss += coverage_loss / target_max_len  # not accurate because of the padding
 
     # if verbose:

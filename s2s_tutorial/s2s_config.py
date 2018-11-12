@@ -10,9 +10,9 @@ from utils.helpers import seq_max_length_get
 cfg = edict()
 
 # other config
-cfg.verbose = True
+cfg.verbose = False
 cfg.load_model = False
-cfg.model_type = 'basic_attn'  # basic_rnn, basic_attn
+cfg.model_type = 'basic_rnn'  # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cfg.plot_attn = False
@@ -20,18 +20,18 @@ cfg.plot_attn = False
 
 # data-set config
 data_set = 's2s_toy_data_copy'
+cfg.seq_max_len = 5  # filter the src samples longer than max_len
 top_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(top_dir, 'data')
 model_pkl_dir = os.path.join(top_dir, 'model_pkls')
 train_x_dir = os.path.join(data_dir, data_set, 'train')
-cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train_small_seq.csv')
-cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test_small_seq.csv')
-en_vocab_path = os.path.join(data_dir, data_set, 'small_eng_vocab.pkl')
-fra_vocab_path = os.path.join(data_dir, data_set, 'small_fra_vocab.pkl')
+cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train.csv')
+cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test.csv')
+vocab_path = os.path.join(data_dir, data_set, 'vocab.pkl')
 #
 
 # vocab config
-vocab = pickle.load(open(en_vocab_path, 'rb'))
+vocab = pickle.load(open(vocab_path, 'rb'))
 src_vocab_len = len(vocab)
 src_pad_token = int(vocab.index('<PAD>'))
 target_vocab_len = len(vocab)
@@ -57,16 +57,18 @@ cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set)
 #
 
 # model hyper-parameters
-dim = 256
 cfg.rnn_type = 'rnn'
-cfg.encoder_input_dim = dim
-cfg.encoder_hidden_dim = dim
-cfg.decoder_input_dim = dim
-cfg.decoder_hidden_dim = dim
+cfg.encoder_input_dim = 32
+cfg.encoder_hidden_dim = 256
+cfg.decoder_hidden_dim = 256
 cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
 cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
 cfg.softmax_share_embedd = False
-cfg.share_embedding = False  # encoder and decoder share the same embedding layer
+cfg.share_embedding = True  # encoder and decoder share the same embedding layer
+if cfg.share_embedding:
+    cfg.decoder_input_dim = cfg.encoder_input_dim
+else:
+    cfg.decoder_input_dim = 256
 cfg.encoder_bi_direction = False
 cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.0
@@ -80,13 +82,12 @@ else:
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 1
-cfg.batch_size = 4
+cfg.epoches = 20
+cfg.batch_size = 32
 cfg.test_batch_size = 1
-cfg.use_teacher_forcing = True
-cfg.teacher_forcing_ratio = 0.3
+cfg.use_teacher_forcing = False
+cfg.teacher_forcing_ratio = 0.0
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
 cfg.decode_mode = 'greedy'  # beam_search, greedy
 cfg.beam_width = 1  #
-
 #

@@ -29,7 +29,7 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
 
     # decode
     loss, target_max_len = decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden,
-                                       use_teacher_forcing, decoder, input_tensor=input_tensor)
+                                       use_teacher_forcing, decoder)
     #
 
     # calculate gradient & update parameters
@@ -53,7 +53,6 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
         for batch_index, (batch_x, batch_y, uid) in enumerate(train_loader):
             batch_x = batch_x.to(cfg.device)
             batch_y = batch_y.to(cfg.device)
-
             loss = train_1_batch(cfg, batch_x, batch_y, encoder, decoder)
 
             epoch_loss += loss
