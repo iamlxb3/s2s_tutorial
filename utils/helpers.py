@@ -152,7 +152,6 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
             coverage_loss=0,
             coverage_vector=None,
             coverage_mask_list=None,
-            word_pointer_pos=None,
             is_test=False):
     # initialize decoder_hidden, decoder_input_0
     decoder_hidden = encoder_last_hidden
@@ -180,8 +179,7 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
                     coverage_loss_t = 0
                     # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
             decoder_output_t, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
-                                                                      coverage=coverage_vector,
-                                                                      word_pointer_pos=word_pointer_pos)
+                                                                      coverage=coverage_vector)
             attn_weights.append(attn_weight_t)
 
         # gather decoder output
@@ -276,22 +274,6 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
         #
     #
 
-    # point-generator
-    word_pointer_pos = None
-    if cfg.is_point_generator:
-        batch_size = cfg.batch_size
-        word_pointer_pos = torch.zeros((batch_size, cfg.vocab_size, encoder_outputs.size(0)))
-        input_tensors = []
-        for batch in range(batch_size):
-            batch_tensor = input_tensor[batch][input_tensor[batch] != cfg.src_pad_token].unsqueeze(0)
-            input_tensors.append(batch_tensor)
-
-        for word_index in range(cfg.vocab_size):
-            for batch in range(batch_size):
-                input_tensor = input_tensors[batch]
-                word_pointer_pos[batch][word_index][:input_tensor.size(1)] = input_tensor == word_index
-    #
-
     # decode
     decoder_output, coverage_loss, attn_weights = _decode(cfg, decoder, encoder_outputs, target_tensor,
                                                           encoder_last_hidden, target_max_len,
@@ -299,7 +281,6 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
                                                           coverage_loss=coverage_loss,
                                                           coverage_vector=coverage_vector,
                                                           coverage_mask_list=coverage_mask_list,
-                                                          word_pointer_pos=word_pointer_pos,
                                                           is_test=is_test)
     #
 

@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
 from torch.optim import lr_scheduler
 from torch import optim
-from eng_fra_config import cfg
+from config import cfg
 
 
 def args_parse():

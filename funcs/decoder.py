@@ -125,7 +125,7 @@ class AttnDecoderRNN(nn.Module):
         if is_point_generator:
             self.pg = PointerGenerator(hidden_size * 2)
 
-    def forward(self, input_step, last_hidden, encoder_outputs, coverage=None, word_pointer_pos=None):
+    def forward(self, input_step, last_hidden, encoder_outputs, coverage=None):
         """
         :param input_step:
         :param last_hidden:
@@ -160,13 +160,6 @@ class AttnDecoderRNN(nn.Module):
             output = concat_output @ output_weights
         else:
             output = self.out(concat_output)
-
-        # add pointer-generator
-        if self.is_pg:
-            pg_prob = self.pg(concat_input)
-            pg_vocab_prob = torch.bmm(word_pointer_pos, torch.transpose(attn_weights, 2, 1)).squeeze(2)
-            output = pg_vocab_prob * pg_prob + output * (1 - pg_prob)
-        #
 
         output = F.log_softmax(output, dim=1)
         # Return output and final hidden state

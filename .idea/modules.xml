@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/byte_cup.iml" filepath="$PROJECT_DIR$/.idea/byte_cup.iml" />
-      <module fileurl="file://$USER_HOME$/byte_play/.idea/byte_play.iml" filepath="$USER_HOME$/byte_play/.idea/byte_play.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/byte_play_main.iml" filepath="$PROJECT_DIR$/.idea/byte_play_main.iml" />
     </modules>
   </component>
