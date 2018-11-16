@@ -1,7 +1,5 @@
 """
-TODOLIST:
-
-try pin_memory to speed up
+训练函数，类似于main的功能
 """
 import random
 import sys
@@ -20,20 +18,9 @@ from torch import optim
 from config import cfg
 
 
-def args_parse():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--load_model', action="store_true", help='Epoch size', default=False)
-    args = parser.parse_args()
-    return args
-
-
 def main():
-    # TODO, add parsing
-    args = args_parse()
     #
-
-    # TODO, temp, other configs
-    N = 20
+    N = 20  # TODO 这里是测试用的，把train的大小限制在20，如果你真的要跑，把N改成None
     if N is None:
         N = 999999999
     #
@@ -41,18 +28,18 @@ def main():
     # load model
     encoder, decoder = model_get(cfg)
 
-    # set optimizer & lr_scheduler
+    # set optimizer & lr_scheduler，设置优化器和scheduler，基本不动也没事儿~
     cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()))
-    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-8)
+    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-6)
     #
 
-    # Split train / val, TODO
+    # Split train / val
     csv_path = cfg.train_seq_csv_path
     X = pd.read_csv(csv_path)['source'].values[:N]
     Y = pd.read_csv(csv_path)['target'].values[:N]
     uids = pd.read_csv(csv_path)['uid'].values[:N]
 
-    random.seed(1)  # TODO, add shuffle
+    random.seed(1)  # TODO, 是否用random seed，这里只保证val和train每次都被分割的一样
     shuffled_X_Y_uids = list(zip(X, Y, uids))
     random.shuffle(shuffled_X_Y_uids)
     X, Y, uids = zip(*shuffled_X_Y_uids)
@@ -63,7 +50,7 @@ def main():
     print("Split train/val done!")
     #
 
-    # get generator
+    # get generator 生成train/val的data loader，类似于生成器的功能
     train_generator = Seq2SeqDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
                                      cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     train_loader = DataLoader(train_generator,
@@ -81,11 +68,11 @@ def main():
                             # pin_memory=True
                             )
 
-    # get epoch recorder
+    # get epoch recorder，初始化EpochRecorder
     epoch_recorder = EpochRecorder()
     #
 
-    # start training
+    # start training，开始训练
     step_size = len(train_generator) / cfg.batch_size
     cfg.step_size = step_size
     epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, cfg.encoder_path, cfg.decoder_path)

@@ -1,3 +1,7 @@
+"""
+训练的两个主要的函数都封装在这里了
+"""
+
 import ipdb
 import sys
 import torch
@@ -12,18 +16,22 @@ from funcs.eval_predict import eval_on_val
 
 
 def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
-    # load config
+    """
+    训练一个batch的数据
+    """
+    # load config，读入一些配置
     optimizer = cfg.optimizer
     teacher_forcing_ratio = cfg.teacher_forcing_ratio
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
     #
 
-    # initialize
+    # initialize，偏导数归零
     loss = 0
     optimizer.zero_grad()
     #
 
-    # encode
+    # encode，对输入做encode
+    # encoder_outputs: 序列长度 x batch_size x hidden_dim
     encoder_outputs, encoder_last_hidden = encode_func(cfg, input_tensor, encoder)
     #
 
@@ -32,7 +40,7 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
                                        use_teacher_forcing, decoder, input_tensor=input_tensor)
     #
 
-    # calculate gradient & update parameters
+    # calculate gradient & update parameters，更新参数
     loss.backward()
     optimizer.step()
     #
@@ -42,26 +50,33 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
 
 
 def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path):
+    """
+    所有的训练在这里完成，跑完所有的epoch
+    """
     # add attention-recoder
 
     for epoch, epoch_index in enumerate(range(cfg.epoches)):
 
-        # set to train mode
+        # set to train mode，将模型设定为train模式
         encoder, decoder = encoder.train(), decoder.train()
 
         epoch_loss = 0
         for batch_index, (batch_x, batch_y, uid) in enumerate(train_loader):
+
+            # 读取一个batch的数据
             batch_x = batch_x.to(cfg.device)
             batch_y = batch_y.to(cfg.device)
 
+            # 训练一个batch的数据
             loss = train_1_batch(cfg, batch_x, batch_y, encoder, decoder)
 
+            # 累计loss
             epoch_loss += loss
 
             if cfg.verbose:
                 print("Epoch-{} batch_index-{}/{} Loss: {}".format(epoch, batch_index, len(train_loader), loss))
 
-        # eval on validation set
+        # eval on validation set，每一个epoch训练好都要在验证集上测试一下
         # set to eval mode
         encoder, decoder = encoder.eval(), decoder.eval()
         val_loss = []
@@ -72,7 +87,7 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
         val_loss = np.average(val_loss)
         #
 
-        # lr_scheduler
+        # lr_scheduler，根据验证集上的表现，决定要不要调整模型的学习率
         cfg.lr_scheduler.step(val_loss)
         print("Current lr: ", cfg.optimizer.param_groups[0]['lr'])
         #
@@ -82,7 +97,7 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
         print("Epoch: {}, loss: {}, val_loss: {}".format(epoch, epoch_loss, val_loss))
         #
 
-        # Save checkpoint
+        # Save checkpoint，根据验证集上的表现，来保存当前最好的模型
         lowest_val_loss, lowest_val_loss_index = epoch_recorder.lowest_val_loss
         if val_loss < lowest_val_loss:
             save_cktpoint(encoder, decoder, encoder_path, decoder_path)

@@ -1,3 +1,7 @@
+"""
+记录没一个epoch模型的表现，然后再决定要不要保存模型，一般是保存当前最好的一个模型。
+"""
+
 class EpochRecorder():
     def __init__(self):
         self._epoch_train_losses = []

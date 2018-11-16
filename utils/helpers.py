@@ -1,3 +1,7 @@
+"""
+一些帮助函数，把他们一起封装起来放在这里
+"""
+
 import torch
 import math
 import ipdb
@@ -131,6 +135,9 @@ def lcsubstring_length(a, b):
 
 
 def encode_func(cfg, input_tensor, encoder):
+    """
+    编码函数
+    """
     batch_size = input_tensor.shape[0]
 
     encoder_h0 = encoder.initHidden(batch_size, cfg.device)
@@ -262,7 +269,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     target_max_len = target_tensor.size(1)
     criterion = cfg.criterion
 
-    # add coverage
+    # add coverage， coverage的一些功能
     coverage_vector = None
     coverage_mask_list=None
     coverage_loss = 0
@@ -276,7 +283,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
         #
     #
 
-    # point-generator
+    # point-generator， point-generator的一些功能
     word_pointer_pos = None
     if cfg.is_point_generator:
         batch_size = cfg.batch_size
@@ -293,6 +300,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #
 
     # decode
+    # decoder_output 是一个list, 包含每一个时刻的输出，维度是batch_size x 字典大小
     decoder_output, coverage_loss, attn_weights = _decode(cfg, decoder, encoder_outputs, target_tensor,
                                                           encoder_last_hidden, target_max_len,
                                                           use_teacher_forcing,
@@ -306,19 +314,6 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     # decoder_output, target_tensor,
     loss += criterion(torch.cat(decoder_output, 0), torch.transpose(target_tensor, 0, 1).contiguous().view(-1))
     loss += coverage_loss / target_max_len  # not accurate because of the padding
-
-    # if verbose:
-    #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
-    #     new_decoded_outputs = []
-    #     for x in decoded_outputs:
-    #         new_decoded_outputs.append(x)
-    #         if x == target_EOS_index:
-    #             break
-    #
-    #     print("\n--------------------------------------------")
-    #     print("decoded_outputs: ", new_decoded_outputs)
-    #     print("target_tensor: ", print_target)
-    #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
 
     if is_test:
         return loss, target_max_len, decoder_output, attn_weights

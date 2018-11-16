@@ -1,5 +1,5 @@
 """
-install rouge: pip install git+https://github.com/tagucci/pythonrouge.git
+用于test和validation set上验证模型的一些函数
 """
 
 import torch

@@ -1,3 +1,7 @@
+"""
+decoder都放在这里了，我们只用AttnDecoderRNN
+"""
+
 import torch
 import ipdb
 import torch.nn as nn

@@ -1,3 +1,8 @@
+"""
+数据的生成器，会设定输入和输出的最大长度，因为pytorch的data loader会做concatanate，又会打乱，所以必须要定长。
+看下就行，不用改
+"""
+
 import pandas as pd
 import random
 import torch

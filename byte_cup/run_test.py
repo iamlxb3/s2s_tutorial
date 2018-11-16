@@ -1,3 +1,7 @@
+"""
+在测试集上进行测试，会打印出ground truth和模型预测的结果
+"""
+
 import pandas as pd
 import sys
 
