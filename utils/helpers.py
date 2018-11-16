@@ -304,7 +304,7 @@ def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, 
     #
 
     # decoder_output, target_tensor,
-    loss += criterion(torch.cat(decoder_output, 0), target_tensor.view(-1))
+    loss += criterion(torch.cat(decoder_output, 0), torch.transpose(target_tensor, 0, 1).contiguous().view(-1))
     loss += coverage_loss / target_max_len  # not accurate because of the padding
 
     # if verbose:

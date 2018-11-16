@@ -31,13 +31,15 @@ class Encoder(nn.Module):
         xt = nn.utils.rnn.pack_padded_sequence(xt, lengths=sorted_seq_lens)
         output, hidden = self.rnn(xt, ht)
         output = nn.utils.rnn.pad_packed_sequence(output)[0]  # 返回的seq长度可能和输入的不一样，大概是pad_packed的功能
-        output = output.index_select(1, torch.tensor(sorted_indices))
 
+        recover_indices = torch.tensor(sorted_indices).sort(0)[1]
         if self.bidirectional:
             output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:]
             hidden = hidden[:self.n_layers] # TODO, return the last hidden state, not 100% sure
 
         # 范围的seq是这个batch里面最大的，输入短的seq的有效输出与输入长度一样，剩下的应该都是0
+        output = output.index_select(1, recover_indices)
+        hidden = hidden.index_select(1, recover_indices)
         return output, hidden
 
     def initHidden(self, batch, device):
