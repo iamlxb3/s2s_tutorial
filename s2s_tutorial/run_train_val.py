@@ -25,19 +25,24 @@ from torch.utils.data import DataLoader
 from funcs.recorder import EpochRecorder
 from torch.optim import lr_scheduler
 from torch import optim
-from s2s_config import cfg
+from exp_config import experiments
 
 
 def args_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--load_model', action="store_true", help='Epoch size', default=False)
+    parser.add_argument('--e', help='the name of the experiment', type=str, required=False,
+                        choices=list(experiments.keys()))
     args = parser.parse_args()
     return args
 
 
 def main():
-    # TODO, add parsing
+    # load experiment
     args = args_parse()
+    if args.e is not None:
+        cfg = experiments[args.e]
+    else:
+        from s2s_config import cfg
     #
 
     # load model
@@ -51,19 +56,20 @@ def main():
     # Split train / val, TODO
     csv_path = cfg.train_seq_csv_path
     df = pd.read_csv(csv_path)
-    mask = df['source'].apply(lambda x: len(x.split(','))) <= cfg.seq_max_len  # filter by length
+    tmp_df = df['source'].apply(lambda x: len(x.split(',')))
+    mask = (tmp_df <= cfg.seq_max_len) & (tmp_df >= cfg.seq_min_len)  # TODO, filter by length
     df = df[mask]
 
     X = df['source'].values
     Y = df['target'].values
     uids = df['uid'].values
 
-    random.seed(1)  # TODO, add shuffle
-    torch.manual_seed(1)
+    random.seed(cfg.randseed)  # TODO, add shuffle
+    torch.manual_seed(cfg.randseed)
     shuffled_X_Y_uids = list(zip(X, Y, uids))
     random.shuffle(shuffled_X_Y_uids)
     X, Y, uids = zip(*shuffled_X_Y_uids)
-    val_percent = 0.2
+    val_percent = cfg.val_percent
     val_index = int(val_percent * len(X))
     train_X, train_Y, train_uids = X[val_index:], Y[val_index:], uids[val_index:]
     val_X, val_Y, val_uids = X[:val_index], Y[:val_index], uids[:val_index]

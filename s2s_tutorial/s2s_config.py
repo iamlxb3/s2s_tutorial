@@ -11,6 +11,7 @@ cfg = edict()
 cfg.name = 'untitled'  # name for the experiment
 
 # other config
+cfg.randseed = 1
 cfg.verbose = False
 cfg.load_model = False
 cfg.model_type = 'basic_rnn'  # basic_rnn, basic_attn
@@ -26,7 +27,9 @@ cfg.exp_dir = os.path.join(cfg.results_dir, cfg.name)
 
 # data-set config
 data_set = 's2s_toy_data_copy'
+cfg.seq_min_len = 1  # filter the src samples longer than max_len
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
+cfg.val_percent = 0.2
 data_dir = '../data'
 train_x_dir = os.path.join(data_dir, data_set, 'train')
 cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train.csv')

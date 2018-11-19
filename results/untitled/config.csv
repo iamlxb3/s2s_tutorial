@@ -1,4 +1,5 @@
 name,untitled
+randseed,1
 verbose,False
 load_model,False
 model_type,basic_rnn
@@ -7,7 +8,9 @@ device,cpu
 plot_attn,False
 results_dir,../results
 exp_dir,../results/untitled
+seq_min_len,1
 seq_max_len,5
+val_percent,0.2
 train_seq_csv_path,../data/s2s_toy_data_copy/train.csv
 test_seq_csv_path,../data/s2s_toy_data_copy/test.csv
 src_vocab_len,30
@@ -50,5 +53,5 @@ Parameter Group 0
     lr: 0.001
     weight_decay: 0
 )"
-lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x11d430dd8>
+lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x11e19fe48>
 step_size,21
