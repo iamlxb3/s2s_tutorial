@@ -1,3 +1,5 @@
+python 版本: Python 3.6.4
+
 bytecup 最初级的版本
 
 这个版本可能还是有BUG, 不过也很难测试吧，反正是跑通了，我先介绍下几个文件夹。
@@ -10,6 +12,20 @@ byte_cup/
 data/bytecup2018/
 就是放数据的文件夹
 里面放了2个超级缩小版的train和test，vocab的长度是8W多，OOV的词都用<UNK>代替。
+
+字典创建的方式：
+把训练集，验证集，测试集的文本都读进来，处理的方式就是先转成小写，然后用nltk.word_tokenize来把一个句子里的词提取出来，
+接着计算词频，取词频前8W的作为字典，out of vocabulary的词一律认为是<UNK>, 字典里是一个List, 字典里还有<EOS>, <SOS>, <PAD>，
+分别代表句子开始，句子结束，padding字符
+
+下面说说输入文字转换为index的过程，就是比如I am a pig -> 10, 2, 1, 3 (数字代表了这个词在vocab里的index)
+body和title在提取词的时候一点不同，body的内容在做word_tokenize之后，还会有一个Lemmatize的过程，用的也是ntlk，
+title目前仅仅用word_tokenize提取词，当然都会转成小写。不在字典里的词全部转换成<UNK>，所以现在还有一步没有做，
+就是如何把<UNK>再还原回去。
+
+小数据集就是大数据集的子集，我手动生成的。
+
+帮助函数就是封装一些项目里常用的函数，让代码看起来简洁一点
 
 funcs/
 放了一下常用的函数，这里不细说了

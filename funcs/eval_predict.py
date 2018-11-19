@@ -37,7 +37,7 @@ def rogue_compute(reference, summary):
     try:
         rogue_l = ((1 + beta ** 2) * lcs_recall * lcs_precision) / (lcs_recall + beta ** 2 * lcs_precision)
     except ZeroDivisionError:
-        rogue_l = 0.0  # TODO
+        rogue_l = 0.0  # TODO, 就是分母为0，不知道设默认什么值啊
     return rogue_l
 
 

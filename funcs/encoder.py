@@ -39,7 +39,8 @@ class Encoder(nn.Module):
         recover_indices = torch.tensor(sorted_indices).sort(0)[1]
         if self.bidirectional:
             output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:]
-            hidden = hidden[:self.n_layers]  # TODO, return the last hidden state, not 100% sure
+            hidden = hidden[:self.n_layers]  # TODO, 双向LSTM，两头都有hidden state，传给decoder的hidden state应该是尾巴的，
+                                             # 我看教程上这样写是尾巴的hidden state
 
         # 范围的seq是这个batch里面最大的，输入短的seq的有效输出与输入长度一样，剩下的应该都是0
         output = output.index_select(1, recover_indices)
