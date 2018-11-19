@@ -13,6 +13,7 @@ from funcs.decoder import DecoderRnn
 from funcs.decoder import AttnDecoderRNN
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
+import seaborn as sns
 from queue import PriorityQueue
 
 
@@ -329,3 +330,31 @@ def plot_attentions(attn_weights, src, target):
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     plt.show()
+
+
+def plot_results(epoch_recorder, title='', save_path='', is_show=True):
+    """
+    Plot the train loss and the validation loss
+    :param epoch_recorder:
+    :return:
+    """
+    sns.set_style("darkgrid")
+
+    train_loss = epoch_recorder.train_losses
+    val_loss = epoch_recorder.val_losses
+    assert len(train_loss) == len(val_loss)
+    epoches = [x for x in range(len(train_loss))]
+
+    plt.plot(epoches, train_loss)
+    plt.plot(epoches, val_loss)
+    plt.title(title)
+    plt.legend(['train_loss', 'val_loss'], loc='upper left')
+    plt.xlabel('epoch')
+    if save_path:
+        plt.savefig(save_path)
+    if is_show:
+        plt.show()
+
+def output_config(config, config_output_path):
+    df = pd.DataFrame(list(config.items()))
+    df.to_csv(config_output_path, index=False, header=False)

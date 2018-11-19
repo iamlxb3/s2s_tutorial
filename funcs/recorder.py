@@ -13,6 +13,14 @@ class EpochRecorder():
             index = -1
         return tuple((lowest_val_loss, index))
 
+    @property
+    def train_losses(self):
+        return self._epoch_train_losses
+
+    @property
+    def val_losses(self):
+        return self._epoch_val_losses
+
     def val_loss_update(self, loss):
         self._epoch_val_losses.append(loss)
 

@@ -1,16 +1,15 @@
 """
 TODOLIST:
-1. add attention display
-2. add bi-gru function
-3. see https://github.com/ymfa/seq2seq-summarizer    pointer-generator source code
-4. add pointer-generator
-5. add coverage
+1. see https://github.com/ymfa/seq2seq-summarizer    pointer-generator source code
+
 
 try pin_memory to speed up
 """
 import ipdb
 import random
+import math
 import sys
+import os
 import torch
 import pandas as pd
 import argparse
@@ -18,6 +17,8 @@ import argparse
 sys.path.append("..")
 from funcs.trainer import epoches_train
 from utils.helpers import model_get
+from utils.helpers import plot_results
+from utils.helpers import output_config
 
 from funcs.gen import Seq2SeqDataSet
 from torch.utils.data import DataLoader
@@ -35,7 +36,6 @@ def args_parse():
 
 
 def main():
-
     # TODO, add parsing
     args = args_parse()
     #
@@ -45,13 +45,13 @@ def main():
 
     # set optimizer & lr_scheduler
     cfg.optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=cfg.lr)
-    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-8)
+    cfg.lr_scheduler = lr_scheduler.ReduceLROnPlateau(cfg.optimizer, 'min', verbose=True, patience=3, min_lr=1e-6)
     #
 
     # Split train / val, TODO
     csv_path = cfg.train_seq_csv_path
     df = pd.read_csv(csv_path)
-    mask = df['source'].apply(lambda x:len(x.split(','))) <= cfg.seq_max_len # filter by length
+    mask = df['source'].apply(lambda x: len(x.split(','))) <= cfg.seq_max_len  # filter by length
     df = df[mask]
 
     X = df['source'].values
@@ -71,7 +71,7 @@ def main():
 
     # get generator
     train_generator = Seq2SeqDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+                                     cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     train_loader = DataLoader(train_generator,
                               batch_size=cfg.batch_size,
                               shuffle=cfg.data_shuffle,
@@ -79,7 +79,7 @@ def main():
                               # pin_memory=True
                               )
     val_generator = Seq2SeqDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                 cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     val_loader = DataLoader(val_generator,
                             batch_size=cfg.batch_size,
                             shuffle=False,
@@ -92,10 +92,20 @@ def main():
     #
 
     # start training
-    step_size = len(train_generator) / cfg.batch_size
+    step_size = int(math.ceil(len(train_generator) / cfg.batch_size))
     cfg.step_size = step_size
     epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, cfg.encoder_path, cfg.decoder_path)
     print('Training done!')
+    #
+
+    # plot results
+    if not os.path.isdir(cfg.exp_dir):
+        os.makedirs(cfg.exp_dir)
+    plot_results(epoch_recorder, title='', save_path=os.path.join(cfg.exp_dir, 'loss.png'))
+    #
+
+    # save config results
+    output_config(cfg, os.path.join(cfg.exp_dir, 'config.csv'))
     #
 
 

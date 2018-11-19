@@ -8,6 +8,7 @@ from utils.helpers import seq_max_length_get
 
 # config dict
 cfg = edict()
+cfg.name = 'untitled'  # name for the experiment
 
 # other config
 cfg.verbose = False
@@ -18,12 +19,15 @@ cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_availab
 cfg.plot_attn = False
 #
 
+# result save path config
+cfg.results_dir = '../results'
+cfg.exp_dir = os.path.join(cfg.results_dir, cfg.name)
+#
+
 # data-set config
 data_set = 's2s_toy_data_copy'
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
-top_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_dir = os.path.join(top_dir, 'data')
-model_pkl_dir = os.path.join(top_dir, 'model_pkls')
+data_dir = '../data'
 train_x_dir = os.path.join(data_dir, data_set, 'train')
 cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train.csv')
 cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test.csv')
@@ -52,8 +56,8 @@ cfg.data_shuffle = True
 #
 
 # model path config
-cfg.encoder_path = os.path.join(model_pkl_dir, '{}_encoder.pkl'.format(data_set))  # set encoder path
-cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set))  # set decoder path
+cfg.encoder_path = ('../model_pkls/{}_encoder.pkl'.format(data_set))  # set encoder path
+cfg.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(data_set))  # set decoder path
 #
 
 # model hyper-parameters
@@ -82,7 +86,7 @@ else:
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 20
+cfg.epoches = 2
 cfg.batch_size = 32
 cfg.test_batch_size = 1
 cfg.use_teacher_forcing = False
