@@ -1,0 +1,58 @@
+name,exp1
+randseed,1
+verbose,False
+load_model,False
+model_type,basic_rnn
+use_pretrain_embedding,False
+device,cpu
+plot_attn,False
+results_dir,../results
+exp_dir,../results/exp1
+seq_min_len,1
+seq_max_len,5
+val_percent,0.2
+train_seq_csv_path,../data/s2s_toy_data_copy/train.csv
+test_seq_csv_path,../data/s2s_toy_data_copy/test.csv
+src_vocab_len,30
+target_vocab_len,30
+src_pad_token,0
+target_SOS_token,1
+target_EOS_token,2
+target_pad_token,0
+num_workers,8
+data_shuffle,True
+encoder_path,../model_pkls/s2s_toy_data_copy_encoder.pkl
+decoder_path,../model_pkls/s2s_toy_data_copy_decoder.pkl
+rnn_type,rnn
+encoder_input_dim,32
+encoder_hidden_dim,256
+decoder_hidden_dim,256
+encoder_pad_shape,"[51, 1]"
+decoder_pad_shape,"[51, 1]"
+softmax_share_embedd,False
+share_embedding,True
+decoder_input_dim,32
+encoder_bi_direction,False
+is_coverage,False
+coverage_loss_coeff,0.0
+attn_method,general
+lr,0.001
+epoches,2
+batch_size,32
+test_batch_size,1
+use_teacher_forcing,False
+teacher_forcing_ratio,0.0
+criterion,NLLLoss()
+decode_mode,greedy
+beam_width,1
+data_set,s2s_toy_data_reverse
+optimizer,"Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.001
+    weight_decay: 0
+)"
+lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x10a9386d8>
+step_size,21
