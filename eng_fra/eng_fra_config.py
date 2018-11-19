@@ -12,7 +12,6 @@ cfg = edict()
 # other config
 cfg.verbose = True
 cfg.load_model = False
-cfg.model_type = 'basic_attn' # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cfg.plot_attn = False
@@ -59,7 +58,8 @@ cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set)
 
 # model hyper-parameters
 dim = 256
-cfg.rnn_type = 'rnn'
+cfg.decode_rnn_type = 'basic_attn' # basic_rnn, basic_attn # decode_rnn_type
+cfg.encode_rnn_type = 'gru' # rnn, gru
 cfg.encoder_input_dim = dim
 cfg.encoder_hidden_dim = dim
 cfg.decoder_input_dim = dim
@@ -69,7 +69,7 @@ cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1
 cfg.softmax_share_embedd = False
 cfg.share_embedding = False  # encoder and decoder share the same embedding layer
 cfg.encoder_bi_direction = False
-cfg.is_coverage = True
+cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.0
 cfg.is_point_generator = False
 
@@ -82,13 +82,13 @@ else:
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 1
-cfg.batch_size = 4
+cfg.epoches = 20
+cfg.batch_size = 32
 cfg.test_batch_size = 1
 cfg.use_teacher_forcing = True
-cfg.teacher_forcing_ratio = 0.3
+cfg.teacher_forcing_ratio = 0.5
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
-cfg.decode_mode = 'beam_search' # beam_search, greedy
+cfg.decode_mode = 'greedy' # beam_search, greedy
 cfg.beam_width = 1 #
 
 #

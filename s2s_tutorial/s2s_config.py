@@ -14,7 +14,6 @@ cfg.name = 'untitled'  # name for the experiment
 cfg.randseed = 1
 cfg.verbose = False
 cfg.load_model = False
-cfg.model_type = 'basic_rnn'  # basic_rnn, basic_attn
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cfg.plot_attn = False
@@ -26,15 +25,15 @@ cfg.exp_dir = os.path.join(cfg.results_dir, cfg.name)
 #
 
 # data-set config
-data_set = 's2s_toy_data_copy'
+cfg.data_set = 's2s_toy_data_copy'
 cfg.seq_min_len = 1  # filter the src samples longer than max_len
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
 cfg.val_percent = 0.2
 data_dir = '../data'
-train_x_dir = os.path.join(data_dir, data_set, 'train')
-cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train.csv')
-cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test.csv')
-vocab_path = os.path.join(data_dir, data_set, 'vocab.pkl')
+train_x_dir = os.path.join(data_dir, cfg.data_set, 'train')
+cfg.train_seq_csv_path = os.path.join(data_dir, cfg.data_set, 'train.csv')
+cfg.test_seq_csv_path = os.path.join(data_dir, cfg.data_set, 'test.csv')
+vocab_path = os.path.join(data_dir, cfg.data_set, 'vocab.pkl')
 #
 
 # vocab config
@@ -59,12 +58,13 @@ cfg.data_shuffle = True
 #
 
 # model path config
-cfg.encoder_path = ('../model_pkls/{}_encoder.pkl'.format(data_set))  # set encoder path
-cfg.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(data_set))  # set decoder path
+cfg.encoder_path = ('../model_pkls/{}_encoder.pkl'.format(cfg.data_set))  # set encoder path
+cfg.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(cfg.data_set))  # set decoder path
 #
 
 # model hyper-parameters
-cfg.rnn_type = 'rnn'
+cfg.encode_rnn_type = 'rnn' # rnn, gru
+cfg.decode_rnn_type = 'basic_rnn'  # basic_rnn, basic_attn
 cfg.encoder_input_dim = 32
 cfg.encoder_hidden_dim = 256
 cfg.decoder_hidden_dim = 256

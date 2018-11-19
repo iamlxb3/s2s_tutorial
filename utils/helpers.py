@@ -51,10 +51,10 @@ def model_get(cfg):
         #
 
         encoder = Encoder(encoder_input_dim, encoder_hidden_dim, src_vocab_len,
-                          bidirectional=cfg.encoder_bi_direction, type=cfg.rnn_type).to(cfg.device)
-        if cfg.model_type == 'basic_rnn':
+                          bidirectional=cfg.encoder_bi_direction, type=cfg.encode_rnn_type).to(cfg.device)
+        if cfg.decode_rnn_type == 'basic_rnn':
             decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
-        elif cfg.model_type == 'basic_attn':
+        elif cfg.decode_rnn_type == 'basic_attn':
             decoder = AttnDecoderRNN(cfg.attn_method, target_vocab_len, decoder_input_dim, decoder_hidden_dim,
                                      softmax_share_embedd=cfg.softmax_share_embedd,
                                      pad_token=cfg.target_pad_token).to(cfg.device)
@@ -164,10 +164,10 @@ def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, t
     for t in range(target_max_len):
 
         # (1.) basic rnn
-        if cfg.model_type == 'basic_rnn':
+        if cfg.decode_rnn_type == 'basic_rnn':
             decoder_output_t, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
         # (2.) basic attn
-        elif cfg.model_type == 'basic_attn':
+        elif cfg.decode_rnn_type == 'basic_attn':
             # coverage
             if cfg.is_coverage:
                 if t != 0:
