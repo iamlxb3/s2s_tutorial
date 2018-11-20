@@ -74,7 +74,6 @@ class Attn(torch.nn.Module):
 
         # Transpose max_length and batch_size dimensions
         attn_energies = attn_energies.t()
-
         # Return the softmax normalized probability scores (with added dimension)
         return F.softmax(attn_energies, dim=1).unsqueeze(1)
 

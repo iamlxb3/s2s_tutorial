@@ -14,7 +14,7 @@ cfg.verbose = True
 cfg.load_model = False
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
-cfg.plot_attn = False
+cfg.plot_attn = True
 #
 
 # data-set config
@@ -57,7 +57,7 @@ cfg.decoder_path = os.path.join(model_pkl_dir, '{}_decoder.pkl'.format(data_set)
 #
 
 # model hyper-parameters
-dim = 256
+dim = 512
 cfg.decode_rnn_type = 'basic_attn' # basic_rnn, basic_attn # decode_rnn_type
 cfg.encode_rnn_type = 'gru' # rnn, gru
 cfg.encoder_input_dim = dim
@@ -83,10 +83,10 @@ else:
 # training hyper-parameters config
 cfg.lr = 1e-3
 cfg.epoches = 20
-cfg.batch_size = 32
+cfg.batch_size = 16
 cfg.test_batch_size = 1
 cfg.use_teacher_forcing = True
-cfg.teacher_forcing_ratio = 0.5
+cfg.teacher_forcing_ratio = 0.1
 cfg.criterion = nn.NLLLoss(ignore_index=cfg.target_pad_token)
 cfg.decode_mode = 'greedy' # beam_search, greedy
 cfg.beam_width = 1 #

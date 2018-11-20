@@ -69,6 +69,7 @@ def predict():
         # plot attentions
         if cfg.plot_attn:
             plot_attentions(attn_weights, src_words, decoded_words)
+            ipdb.set_trace()
 
     print("test_loss: ", np.average(test_loss))
     print("rogues: ", np.average(rogues))
