@@ -1,10 +1,7 @@
-import pickle
 import torch
-import os
 import torch.nn as nn
 
 from easydict import EasyDict as edict
-from utils.helpers import seq_max_length_get
 from utils.helpers import auto_config_path_etc
 
 # config dict
@@ -53,8 +50,8 @@ cfg.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(cfg.data_set))  # set 
 cfg.encode_rnn_type = 'rnn'  # rnn, gru
 cfg.decode_rnn_type = 'basic_rnn'  # basic_rnn, basic_attn
 cfg.encoder_input_dim = 32
-cfg.encoder_hidden_dim = 256
-cfg.decoder_hidden_dim = 256
+cfg.encoder_hidden_dim = 32
+cfg.decoder_hidden_dim = 32
 cfg.softmax_share_embedd = False
 cfg.share_embedding = True  # encoder and decoder share the same embedding layer
 if cfg.share_embedding:

@@ -2,33 +2,28 @@ name,untitled
 randseed,1
 verbose,False
 load_model,False
-decode_rnn_type,basic_rnn
 use_pretrain_embedding,False
 device,cpu
 plot_attn,False
 results_dir,../results
-exp_dir,../results/untitled
+data_dir,../data
+data_set,s2s_toy_data_copy
+train_csv_name,train.csv
+test_csv_name,test.csv
 seq_min_len,1
 seq_max_len,5
 val_percent,0.2
-train_seq_csv_path,../data/s2s_toy_data_copy/train.csv
-test_seq_csv_path,../data/s2s_toy_data_copy/test.csv
-src_vocab_len,30
-target_vocab_len,30
-src_pad_token,0
-target_SOS_token,1
-target_EOS_token,2
-target_pad_token,0
+src_vocab_name,vocab.pkl
+target_vocab_name,vocab.pkl
 num_workers,8
 data_shuffle,True
 encoder_path,../model_pkls/s2s_toy_data_copy_encoder.pkl
 decoder_path,../model_pkls/s2s_toy_data_copy_decoder.pkl
 encode_rnn_type,rnn
+decode_rnn_type,basic_rnn
 encoder_input_dim,32
-encoder_hidden_dim,256
-decoder_hidden_dim,256
-encoder_pad_shape,"[51, 1]"
-decoder_pad_shape,"[51, 1]"
+encoder_hidden_dim,32
+decoder_hidden_dim,32
 softmax_share_embedd,False
 share_embedding,True
 decoder_input_dim,32
@@ -42,9 +37,22 @@ batch_size,32
 test_batch_size,1
 use_teacher_forcing,False
 teacher_forcing_ratio,0.0
-criterion,NLLLoss()
 decode_mode,greedy
 beam_width,1
+criterion_cls,<class 'torch.nn.modules.loss.NLLLoss'>
+exp_dir,../results/untitled
+train_x_dir,../data/s2s_toy_data_copy/train
+train_seq_csv_path,../data/s2s_toy_data_copy/train.csv
+test_seq_csv_path,../data/s2s_toy_data_copy/test.csv
+src_vocab_len,30
+target_vocab_len,30
+src_pad_token,0
+target_SOS_token,1
+target_EOS_token,1
+target_pad_token,1
+encoder_pad_shape,"[51, 1]"
+decoder_pad_shape,"[51, 1]"
+criterion,NLLLoss()
 optimizer,"Adam (
 Parameter Group 0
     amsgrad: False
@@ -53,5 +61,5 @@ Parameter Group 0
     lr: 0.001
     weight_decay: 0
 )"
-lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x11e19fe48>
+lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x10b6566a0>
 step_size,21

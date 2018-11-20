@@ -377,14 +377,14 @@ def auto_config_path_etc(cfg):
     # vocab config
     src_vocab_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.src_vocab_name)
     target_vocab_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.target_vocab_name)
-    src_vocab = pickle.load(open(src_vocab_path, 'rb'))
-    target_vocab = pickle.load(open(target_vocab_path, 'rb'))
-    cfg.src_vocab_len = len(src_vocab)
-    cfg.target_vocab_len = len(target_vocab)
-    cfg.src_pad_token = int(src_vocab.index('<PAD>'))
-    cfg.target_SOS_token = int(target_vocab.index('<SOS>'))
-    cfg.target_EOS_token = int(target_vocab.index('<SOS>'))
-    cfg.target_pad_token = int(target_vocab.index('<SOS>'))
+    cfg.src_vocab = pickle.load(open(src_vocab_path, 'rb'))
+    cfg.target_vocab = pickle.load(open(target_vocab_path, 'rb'))
+    cfg.src_vocab_len = len(cfg.src_vocab)
+    cfg.target_vocab_len = len(cfg.target_vocab)
+    cfg.src_pad_token = int(cfg.src_vocab.index('<PAD>'))
+    cfg.target_SOS_token = int(cfg.target_vocab.index('<SOS>'))
+    cfg.target_EOS_token = int(cfg.target_vocab.index('<SOS>'))
+    cfg.target_pad_token = int(cfg.target_vocab.index('<SOS>'))
     #
 
     # model hyper-parameters

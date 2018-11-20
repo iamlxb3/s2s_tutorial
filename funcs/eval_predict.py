@@ -80,7 +80,8 @@ def _decode_target_index(target_tensors, vocab):
     return target_words
 
 
-def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor, vocab):
+def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor):
+    vocab = cfg.target_vocab
     with torch.no_grad():
         # encode
         encoder_outputs, encoder_last_hidden = encode_func(cfg, src_tensor, encoder)
