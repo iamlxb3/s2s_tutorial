@@ -1,5 +1,7 @@
 import torch
 import math
+import os
+import pickle
 import ipdb
 import operator
 import numpy as np
@@ -355,6 +357,43 @@ def plot_results(epoch_recorder, title='', save_path='', is_show=True):
     if is_show:
         plt.show()
 
+
 def output_config(config, config_output_path):
     df = pd.DataFrame(list(config.items()))
     df.to_csv(config_output_path, index=False, header=False)
+
+
+def auto_config_path_etc(cfg):
+    # path config
+    cfg.exp_dir = os.path.join(cfg.results_dir, cfg.name)
+    #
+
+    # data set config
+    cfg.train_x_dir = os.path.join(cfg.data_dir, cfg.data_set, 'train')
+    cfg.train_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.train_csv_name)
+    cfg.test_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.test_csv_name)
+    #
+
+    # vocab config
+    src_vocab_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.src_vocab_name)
+    target_vocab_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.target_vocab_name)
+    src_vocab = pickle.load(open(src_vocab_path, 'rb'))
+    target_vocab = pickle.load(open(target_vocab_path, 'rb'))
+    cfg.src_vocab_len = len(src_vocab)
+    cfg.target_vocab_len = len(target_vocab)
+    cfg.src_pad_token = int(src_vocab.index('<PAD>'))
+    cfg.target_SOS_token = int(target_vocab.index('<SOS>'))
+    cfg.target_EOS_token = int(target_vocab.index('<SOS>'))
+    cfg.target_pad_token = int(target_vocab.index('<SOS>'))
+    #
+
+    # model hyper-parameters
+    cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
+    cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
+    #
+
+    # training hyper-parameters config
+    cfg.criterion = cfg.criterion_cls(ignore_index=cfg.target_pad_token)
+    #
+
+    return cfg
