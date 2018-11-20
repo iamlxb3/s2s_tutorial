@@ -29,21 +29,21 @@ cfg.data_set = 's2s_toy_data_copy'
 cfg.seq_min_len = 1  # filter the src samples longer than max_len
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
 cfg.val_percent = 0.2
-data_dir = '../data'
-train_x_dir = os.path.join(data_dir, cfg.data_set, 'train')
-cfg.train_seq_csv_path = os.path.join(data_dir, cfg.data_set, 'train.csv')
-cfg.test_seq_csv_path = os.path.join(data_dir, cfg.data_set, 'test.csv')
-vocab_path = os.path.join(data_dir, cfg.data_set, 'vocab.pkl')
+cfg.data_dir = '../data'
+cfg.train_x_dir = os.path.join(cfg.data_dir, cfg.data_set, 'train')
+cfg.train_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, 'train.csv')
+cfg.test_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, 'test.csv')
 #
 
 # vocab config
-vocab = pickle.load(open(vocab_path, 'rb'))
-src_vocab_len = len(vocab)
-src_pad_token = int(vocab.index('<PAD>'))
-target_vocab_len = len(vocab)
-target_SOS_token = int(vocab.index('<SOS>'))
-target_EOS_token = int(vocab.index('<EOS>'))
-target_pad_token = int(vocab.index('<PAD>'))
+src_vocab_path = os.path.join(cfg.data_dir, cfg.data_set, 'vocab.pkl')
+src_vocab = pickle.load(open(src_vocab_path, 'rb'))
+src_vocab_len = len(src_vocab)
+src_pad_token = int(src_vocab.index('<PAD>'))
+target_vocab_len = len(src_vocab)
+target_SOS_token = int(src_vocab.index('<SOS>'))
+target_EOS_token = int(src_vocab.index('<EOS>'))
+target_pad_token = int(src_vocab.index('<PAD>'))
 cfg.src_vocab_len = src_vocab_len
 cfg.target_vocab_len = target_vocab_len
 cfg.src_pad_token = src_pad_token
@@ -75,7 +75,7 @@ cfg.share_embedding = True  # encoder and decoder share the same embedding layer
 if cfg.share_embedding:
     cfg.decoder_input_dim = cfg.encoder_input_dim
 else:
-    cfg.decoder_input_dim = 256
+    cfg.decoder_input_dim = 32
 cfg.encoder_bi_direction = False
 cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.0

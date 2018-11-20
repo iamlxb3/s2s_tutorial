@@ -22,7 +22,6 @@ data_set = 'eng_fra'
 top_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(top_dir, 'data')
 model_pkl_dir = os.path.join(top_dir, 'model_pkls')
-train_x_dir = os.path.join(data_dir, data_set, 'train')
 cfg.train_seq_csv_path = os.path.join(data_dir, data_set, 'train_small_seq.csv')
 cfg.test_seq_csv_path = os.path.join(data_dir, data_set, 'test_small_seq.csv')
 en_vocab_path = os.path.join(data_dir, data_set, 'small_eng_vocab.pkl')
@@ -32,18 +31,12 @@ fra_vocab_path = os.path.join(data_dir, data_set, 'small_fra_vocab.pkl')
 # vocab config
 en_vocab = pickle.load(open(en_vocab_path, 'rb'))
 fra_vocab = pickle.load(open(fra_vocab_path, 'rb'))
-src_vocab_len = len(en_vocab)
-src_pad_token = int(en_vocab.index('<PAD>'))
-target_vocab_len = len(fra_vocab)
-target_SOS_token = int(fra_vocab.index('<SOS>'))
-target_EOS_token = int(fra_vocab.index('<EOS>'))
-target_pad_token = int(fra_vocab.index('<PAD>'))
-cfg.src_vocab_len = src_vocab_len
-cfg.target_vocab_len = target_vocab_len
-cfg.src_pad_token = src_pad_token
-cfg.target_SOS_token = target_SOS_token
-cfg.target_EOS_token = target_EOS_token
-cfg.target_pad_token = target_pad_token
+cfg.src_vocab_len = len(en_vocab)
+cfg.target_vocab_len = len(fra_vocab)
+cfg.src_pad_token = int(en_vocab.index('<PAD>'))
+cfg.target_SOS_token = int(fra_vocab.index('<SOS>'))
+cfg.target_EOS_token = int(fra_vocab.index('<SOS>'))
+cfg.target_pad_token = int(fra_vocab.index('<SOS>'))
 #
 
 # data loader config
@@ -82,7 +75,7 @@ else:
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 20
+cfg.epoches = 1
 cfg.batch_size = 16
 cfg.test_batch_size = 1
 cfg.use_teacher_forcing = True
