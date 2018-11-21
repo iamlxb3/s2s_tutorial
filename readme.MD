@@ -1,14 +1,6 @@
-References:
+The master branch is no is use right now.
 
-https://danijar.com/tips-for-training-recurrent-neural-networks/ (Tips for Training Recurrent Neural Networks)
-https://machinelearningmastery.com/teacher-forcing-for-recurrent-neural-networks/ (Teacher-forcing)
+For bytecup code, checkout to bytecup related branch.
 
-
-A repo for text summarization and machine translation, still in progress.
-
-Some features:
-
-[ ] attention \
-[ ] encoder-decoder \
-[ ] pointer-generator \
-[ ] coverage
+This repo is mainly a playground for sequence to sequence learning.
+The main branch is progress is s2stutor, for more information, please checkout to branch s2stutor.
