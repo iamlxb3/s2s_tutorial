@@ -1,5 +1,6 @@
 **This is a playground for sequence to sequence learning in Pytorch.**
 **Still in progress...**
+For bytecup code, please checkout to branch "byte_cup_min", which is a project for abstractive summarisation.
 
 Quick start:
 The default dataset is a self-copy toy dataset. For other default configs, see s2s_tutorial/s2s_config.py
