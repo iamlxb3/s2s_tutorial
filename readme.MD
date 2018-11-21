@@ -10,12 +10,12 @@ python run_train_val.py
 python run_test.py
 ```
 
-To run for english-french translation task,
+You can add your experiemtns by modifying s2s_tutorial/exp_config.py. For the english-french translation task, which is exp1, just run the code below. 
 
 ```
 cd s2s_tutorial
 python run_train_val.py --e exp1
 python run_test.py --e exp1
 ```
-You can modify experiments configs in s2s_tutorial/exp_config.py.
+
 
