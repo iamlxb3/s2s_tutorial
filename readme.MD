@@ -17,5 +17,3 @@ cd s2s_tutorial
 python run_train_val.py --e exp1
 python run_test.py --e exp1
 ```
-
-
