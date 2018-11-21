@@ -22,11 +22,11 @@ decoder_path,../model_pkls/s2s_toy_data_copy_decoder.pkl
 encode_rnn_type,rnn
 decode_rnn_type,basic_rnn
 encoder_input_dim,32
+decoder_input_dim,32
 encoder_hidden_dim,32
 decoder_hidden_dim,32
 softmax_share_embedd,False
 share_embedding,True
-decoder_input_dim,32
 encoder_bi_direction,False
 is_coverage,False
 coverage_loss_coeff,0.0
@@ -44,6 +44,8 @@ exp_dir,../results/untitled
 train_x_dir,../data/s2s_toy_data_copy/train
 train_seq_csv_path,../data/s2s_toy_data_copy/train.csv
 test_seq_csv_path,../data/s2s_toy_data_copy/test.csv
+src_vocab,"['<PAD>', '<SOS>', '<EOS>', '<UNK>', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']"
+target_vocab,"['<PAD>', '<SOS>', '<EOS>', '<UNK>', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']"
 src_vocab_len,30
 target_vocab_len,30
 src_pad_token,0
@@ -61,5 +63,5 @@ Parameter Group 0
     lr: 0.001
     weight_decay: 0
 )"
-lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x10b6566a0>
+lr_scheduler,<torch.optim.lr_scheduler.ReduceLROnPlateau object at 0x10cca66a0>
 step_size,21

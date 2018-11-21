@@ -105,9 +105,10 @@ def main():
     #
 
     # plot results
-    if not os.path.isdir(cfg.exp_dir):
-        os.makedirs(cfg.exp_dir)
-    plot_results(epoch_recorder, title='', save_path=os.path.join(cfg.exp_dir, 'loss.png'))
+    if cfg.plot_loss:
+        if not os.path.isdir(cfg.exp_dir):
+            os.makedirs(cfg.exp_dir)
+        plot_results(epoch_recorder, title='', save_path=os.path.join(cfg.exp_dir, 'loss.png'))
     #
 
     # save config results

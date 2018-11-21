@@ -34,14 +34,17 @@ exp1.encoder_path = ('../model_pkls/{}_encoder.pkl'.format(exp1.data_set))  # se
 exp1.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(exp1.data_set))  # set decoder path
 
 # model hyper-parameters
-exp1.share_embedding = False
 exp1.encode_rnn_type = 'rnn'  # rnn, gru
 exp1.decode_rnn_type = 'basic_attn'  # basic_rnn, basic_attn
 exp1.share_embedding = False
+exp1.encoder_input_dim = 128
+exp1.decoder_input_dim = 128
+exp1.encoder_hidden_dim = 256
+exp1.decoder_hidden_dim = 256
 
 # training hyper-parameters config
-exp1.epoches = 5
-exp1.batch_size = 64
+exp1.epoches = 20
+exp1.batch_size = 32
 exp1.use_teacher_forcing = True
 exp1.teacher_forcing_ratio = 0.3
 

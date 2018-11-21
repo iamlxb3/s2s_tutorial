@@ -15,6 +15,7 @@ cfg.load_model = False
 cfg.use_pretrain_embedding = False
 cfg.device = torch.device("cpu")  # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 cfg.plot_attn = False
+cfg.plot_loss = False
 #
 
 # path config
@@ -50,14 +51,13 @@ cfg.decoder_path = ('../model_pkls/{}_decoder.pkl'.format(cfg.data_set))  # set 
 cfg.encode_rnn_type = 'rnn'  # rnn, gru
 cfg.decode_rnn_type = 'basic_rnn'  # basic_rnn, basic_attn
 cfg.encoder_input_dim = 32
+cfg.decoder_input_dim = 32
 cfg.encoder_hidden_dim = 32
 cfg.decoder_hidden_dim = 32
 cfg.softmax_share_embedd = False
 cfg.share_embedding = True  # encoder and decoder share the same embedding layer
 if cfg.share_embedding:
     cfg.decoder_input_dim = cfg.encoder_input_dim
-else:
-    cfg.decoder_input_dim = 32
 cfg.encoder_bi_direction = False
 cfg.is_coverage = False
 cfg.coverage_loss_coeff = 0.0
