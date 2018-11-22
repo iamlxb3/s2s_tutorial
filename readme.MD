@@ -1,4 +1,4 @@
-**This is a playground for sequence to sequence learning in Pytorch.**
+**This is a playground for sequence to sequence learning with Pytorch.**
 **Still in progress...**
 For bytecup code, please checkout to branch "byte_cup_min", which is a project for abstractive summarisation.
 
