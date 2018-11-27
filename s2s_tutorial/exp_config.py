@@ -1,3 +1,4 @@
+import ipdb
 import copy
 import os
 import sys
@@ -49,6 +50,7 @@ exp1.use_teacher_forcing = True
 exp1.teacher_forcing_ratio = 0.3
 
 exp1 = auto_config_path_etc(exp1)
+# TODO, add lock after
 # ------------------------------------------------------
 
 # ------------------------------------------------------
@@ -61,6 +63,11 @@ exp2.train_csv_name = 'train.csv'
 exp2.test_csv_name = 'test.csv'
 exp2.is_index_input = False
 
+exp2.is_index_input = False # whether the input is represented by index or in high-dimension
+exp2.input_max_len = 50 if not exp2.is_index_input else None
+exp2.input_dim = 100 if not exp2.is_index_input else None
+
+exp2 = auto_config_path_etc(exp2)
 
 # ------------------------------------------------------
 

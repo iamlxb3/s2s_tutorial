@@ -372,6 +372,13 @@ def auto_config_path_etc(cfg):
     cfg.train_x_dir = os.path.join(cfg.data_dir, cfg.data_set, 'train')
     cfg.train_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.train_csv_name)
     cfg.test_seq_csv_path = os.path.join(cfg.data_dir, cfg.data_set, cfg.test_csv_name)
+
+    if cfg.is_index_input:
+        cfg.train_npy_dir = ''
+        cfg.test_npy_dir = ''
+    else:
+        cfg.train_npy_dir = os.path.join(cfg.data_dir, cfg.data_set, cfg.train_npy_dir_name)
+        cfg.test_npy_dir = os.path.join(cfg.data_dir, cfg.data_set, cfg.test_npy_dir_name)
     #
 
     # vocab config
@@ -387,13 +394,18 @@ def auto_config_path_etc(cfg):
     cfg.target_pad_token = int(cfg.target_vocab.index('<SOS>'))
     #
 
-    # model hyper-parameters
-    cfg.encoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
-    cfg.decoder_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
+    # model hyper-parameters, TODO, change
+    if cfg.is_index_input:
+        cfg.x_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
+    else:
+        cfg.x_pad_shape = (cfg.input_max_len, cfg.input_dim)
+    cfg.y_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
     #
 
     # training hyper-parameters config
     cfg.criterion = cfg.criterion_cls(ignore_index=cfg.target_pad_token)
     #
+
+    # TODO, add path assert
 
     return cfg

@@ -4,14 +4,15 @@ import torch
 import pickle
 import shutil
 import pandas as pd
+import numpy as np
 import ipdb
 
 
 def indices_to_one_hot(indices, dim):
-    tensor = torch.zeros((len(indices), dim), dtype=torch.float64)
+    array = np.zeros((len(indices), dim), dtype=np.float32)
     for i, index in enumerate(indices):
-        tensor[i][index] = 1.0
-    return tensor
+        array[i][index] = 1.0
+    return array
 
 
 def toy_data3(save_dir, is_clear):
@@ -41,18 +42,19 @@ def toy_data3(save_dir, is_clear):
         else:
             y = 1
 
-        tensor = indices_to_one_hot(indices, input_dim)
+        array = indices_to_one_hot(indices, input_dim)
 
         if uid >= test_N_index:
             Y_test['uid'].append(uid)
             Y_test['source'].append(','.join([str(x) for x in indices]))
             Y_test['target'].append(y)
-            torch.save(tensor, os.path.join(test_dir, '{}.pt'.format(uid)))
+            np.save(os.path.join(test_dir, '{}'.format(uid)), array)
         else:
             Y_train['uid'].append(uid)
             Y_train['source'].append(','.join([str(x) for x in indices]))
             Y_train['target'].append(y)
-            torch.save(tensor, os.path.join(train_dir, '{}.pt'.format(uid)))
+            np.save(os.path.join(train_dir, '{}'.format(uid)), array)
+
         print(uid)
 
     Y_train = pd.DataFrame(Y_train)
@@ -105,18 +107,18 @@ def toy_data4(save_dir, is_clear):
 
         assert len(indices) >= 4
 
-        tensor = indices_to_one_hot(indices, input_dim)
+        array = indices_to_one_hot(indices, input_dim)
 
         if uid >= test_N_index:
             Y_test['uid'].append(uid)
             Y_test['source'].append(source_indices)
             Y_test['target'].append(target_indices)
-            torch.save(tensor, os.path.join(test_dir, '{}.pt'.format(uid)))
+            np.save(os.path.join(test_dir, '{}'.format(uid)), array)
         else:
             Y_train['uid'].append(uid)
             Y_train['source'].append(source_indices)
             Y_train['target'].append(target_indices)
-            torch.save(tensor, os.path.join(train_dir, '{}.pt'.format(uid)))
+            np.save(os.path.join(train_dir, '{}'.format(uid)), array)
         print(uid)
 
 

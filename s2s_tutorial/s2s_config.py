@@ -31,6 +31,10 @@ cfg.seq_min_len = 1  # filter the src samples longer than max_len
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
 cfg.val_percent = 0.2
 cfg.is_index_input = True # whether the input is represented by index or in high-dimension
+cfg.input_max_len = 50 if not cfg.is_index_input else None
+cfg.input_dim = 100 if not cfg.is_index_input else None
+cfg.train_npy_dir_name = 'train'  # the abs path for train_pt_dir will be updated
+cfg.test_npy_dir_name = 'test'  # the abs path for train_pt_dir will be updated
 #
 
 # vocab config

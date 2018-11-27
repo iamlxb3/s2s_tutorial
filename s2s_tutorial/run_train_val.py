@@ -57,9 +57,11 @@ def main():
     # Split train / val, TODO
     csv_path = cfg.train_seq_csv_path
     df = pd.read_csv(csv_path)
-    tmp_df = df['source'].apply(lambda x: len(x.split(',')))
-    mask = (tmp_df <= cfg.seq_max_len) & (tmp_df >= cfg.seq_min_len)  # TODO, filter by length
-    df = df[mask]
+
+    if cfg.is_index_input:
+        tmp_df = df['source'].apply(lambda x: len(x.split(',')))
+        mask = (tmp_df <= cfg.seq_max_len) & (tmp_df >= cfg.seq_min_len)  # TODO, filter by length
+        df = df[mask]
 
     uids = df['uid'].values
     Y = df['target'].values
@@ -77,14 +79,14 @@ def main():
     #
 
     # get generator
-    train_generator = Seq2SeqDataSet(cfg, train_X, train_Y, train_uids)
+    train_generator = Seq2SeqDataSet(cfg, train_X, train_Y, train_uids, npy_dir=cfg.train_npy_dir)
     train_loader = DataLoader(train_generator,
                               batch_size=cfg.batch_size,
                               shuffle=cfg.data_shuffle,
                               num_workers=cfg.num_workers,
                               # pin_memory=True
                               )
-    val_generator = Seq2SeqDataSet(cfg, val_X, val_Y, val_uids)
+    val_generator = Seq2SeqDataSet(cfg, val_X, val_Y, val_uids, npy_dir=cfg.train_npy_dir)
     val_loader = DataLoader(val_generator,
                             batch_size=cfg.batch_size,
                             shuffle=False,
