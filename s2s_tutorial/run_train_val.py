@@ -8,6 +8,7 @@ try pin_memory to speed up
 import ipdb
 import random
 import math
+import copy
 import sys
 import os
 import torch
@@ -60,9 +61,9 @@ def main():
     mask = (tmp_df <= cfg.seq_max_len) & (tmp_df >= cfg.seq_min_len)  # TODO, filter by length
     df = df[mask]
 
-    X = df['source'].values
-    Y = df['target'].values
     uids = df['uid'].values
+    Y = df['target'].values
+    X = df['source'].values if cfg.is_index_input else copy.copy(uids)
 
     random.seed(cfg.randseed)  # TODO, add shuffle
     torch.manual_seed(cfg.randseed)
@@ -76,16 +77,14 @@ def main():
     #
 
     # get generator
-    train_generator = Seq2SeqDataSet(train_X, train_Y, train_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                     cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+    train_generator = Seq2SeqDataSet(cfg, train_X, train_Y, train_uids)
     train_loader = DataLoader(train_generator,
                               batch_size=cfg.batch_size,
                               shuffle=cfg.data_shuffle,
                               num_workers=cfg.num_workers,
                               # pin_memory=True
                               )
-    val_generator = Seq2SeqDataSet(val_X, val_Y, val_uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                   cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+    val_generator = Seq2SeqDataSet(cfg, val_X, val_Y, val_uids)
     val_loader = DataLoader(val_generator,
                             batch_size=cfg.batch_size,
                             shuffle=False,

@@ -51,5 +51,17 @@ exp1.teacher_forcing_ratio = 0.3
 exp1 = auto_config_path_etc(exp1)
 # ------------------------------------------------------
 
+# ------------------------------------------------------
+# set experiment 2 - multiple sequence -> 1 output
+# ------------------------------------------------------
+exp2 = copy.copy(default_cfg)
+exp2.name = 'exp2'
+exp2.data_set = 'toy_data4'
+exp2.train_csv_name = 'train.csv'
+exp2.test_csv_name = 'test.csv'
+exp2.is_index_input = False
 
-experiments = {'exp1': exp1}
+
+# ------------------------------------------------------
+
+experiments = {'exp1': exp1, 'exp2':exp2}

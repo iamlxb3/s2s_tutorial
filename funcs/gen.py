@@ -7,14 +7,14 @@ import numpy as np
 
 
 class Seq2SeqDataSet():
-    def __init__(self, X, Y, uids, x_pad_shape, y_pad_shape, src_pad_token, target_pad_token,
-                 use_pretrain_embedding):
+    def __init__(self, cfg, X, Y, uids):
+        # TODO, optimize interface
         self.X_train = X
         self.Y_train = Y
         self.uids = uids
-        self.x_all_padding = torch.ones(x_pad_shape).type(torch.LongTensor) * src_pad_token
-        self.y_all_padding = torch.ones(y_pad_shape).type(torch.LongTensor) * target_pad_token
-        self.use_pretrain_embedding = use_pretrain_embedding
+        self.x_all_padding = torch.ones(cfg.x_pad_shape).type(torch.LongTensor) * cfg.src_pad_token
+        self.y_all_padding = torch.ones(cfg.y_pad_shape).type(torch.LongTensor) * cfg.target_pad_token
+        self.use_pretrain_embedding = cfg.use_pretrain_embedding
 
     def _pad_seq(self, seq_array, all_padding_seq):
         if len(seq_array.shape) == 1:

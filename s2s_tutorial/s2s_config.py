@@ -30,6 +30,7 @@ cfg.test_csv_name = 'test.csv'
 cfg.seq_min_len = 1  # filter the src samples longer than max_len
 cfg.seq_max_len = 5  # filter the src samples longer than max_len
 cfg.val_percent = 0.2
+cfg.is_index_input = True # whether the input is represented by index or in high-dimension
 #
 
 # vocab config
