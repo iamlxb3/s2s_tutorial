@@ -38,7 +38,7 @@ def train_1_batch(cfg, input_tensor, target_tensor, encoder, decoder):
     #
 
     # this is the reduced form of loss
-    return loss
+    return float(loss)
 
 
 def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorder, encoder_path, decoder_path):

@@ -100,7 +100,7 @@ def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor):
         # attn_weights
         attn_weights = [x.view(1, -1) for x in attn_weights]
 
-        return loss, decoded_words, target_words, attn_weights
+        return float(loss), decoded_words, target_words, attn_weights
 
 
 def eval_on_val(cfg, encoder, decoder, src_tensor, target_tensor, use_teacher_forcing=False):
@@ -113,4 +113,4 @@ def eval_on_val(cfg, encoder, decoder, src_tensor, target_tensor, use_teacher_fo
         loss, target_max_len = decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden,
                                            use_teacher_forcing, decoder)
 
-        return loss
+        return float(loss)
