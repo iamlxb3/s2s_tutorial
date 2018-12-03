@@ -8,14 +8,31 @@ from funcs.eval_predict import bleu_compute
 from funcs.eval_predict import rogue_compute
 from funcs.eval_predict import predict_on_test
 from utils.helpers import plot_attentions
+from exp_config import experiments
 import numpy as np
 import torch
+import argparse
 import ipdb
-from eng_fra_config import cfg
-from eng_fra_config import fra_vocab, en_vocab
+
+
+def args_parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--e', help='the name of the experiment', type=str, required=False,
+                        choices=list(experiments.keys()))
+    args = parser.parse_args()
+    return args
 
 
 def predict():
+    # load experiment
+    args = args_parse()
+    if args.e is not None:
+        cfg = experiments[args.e]
+    else:
+        from s2s_config import cfg
+    target_vocab = cfg.target_vocab
+    #
+
     # load models
     encoder = torch.load(cfg.encoder_path)
     decoder = torch.load(cfg.decoder_path)
@@ -25,6 +42,8 @@ def predict():
 
     seq_csv_path = cfg.test_seq_csv_path
     df = pd.read_csv(seq_csv_path)
+    mask = df['source'].apply(lambda x: len(x.split(','))) <= cfg.seq_max_len  # filter by length
+    df = df[mask]
     X = df['source'].values
     Y = df['target'].values
     uids = df['uid'].values
@@ -32,7 +51,7 @@ def predict():
 
     # get generator
     test_generator = Seq2SeqDataSet(X, Y, uids, cfg.encoder_pad_shape, cfg.decoder_pad_shape,
-                                  cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
+                                    cfg.src_pad_token, cfg.target_pad_token, cfg.use_pretrain_embedding)
     test_loader = DataLoader(test_generator,
                              batch_size=1,
                              shuffle=False,
@@ -44,9 +63,9 @@ def predict():
 
     for i, (src_tensor, target_tensor, uid) in enumerate(test_loader):
         src_words = uid_dict[int(uid)].split(',')
-        src_words = [en_vocab[int(index)] for index in src_words]
+        src_words = [target_vocab[int(index)] for index in src_words]
         loss, decoded_words, target_words, attn_weights = predict_on_test(cfg, encoder, decoder, src_tensor,
-                                                                          target_tensor, fra_vocab)
+                                                                          target_tensor)
 
         print("-----------------------------------------------------")
         print("loss: ", loss)
@@ -69,7 +88,6 @@ def predict():
         # plot attentions
         if cfg.plot_attn:
             plot_attentions(attn_weights, src_words, decoded_words)
-            ipdb.set_trace()
 
     print("test_loss: ", np.average(test_loss))
     print("rogues: ", np.average(rogues))

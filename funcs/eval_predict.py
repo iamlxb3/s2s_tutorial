@@ -12,7 +12,6 @@ import sys
 sys.path.append('..')
 from utils.helpers import lcsubstring_length
 from utils.helpers import encode_func
-from utils.helpers import decode_func
 from utils.helpers import beam_search
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -103,14 +102,13 @@ def predict_on_test(cfg, encoder, decoder, src_tensor, target_tensor):
         return float(loss), decoded_words, target_words, attn_weights
 
 
-def eval_on_val(cfg, encoder, decoder, src_tensor, target_tensor, use_teacher_forcing=False):
+def eval_on_val(cfg, encoder, src_tensor, target_tensor, use_teacher_forcing=False):
     with torch.no_grad():
         # encode
-        encoder_outputs, encoder_last_hidden = encode_func(cfg, src_tensor, encoder)
+        predict_Y, encoder_last_hidden = encode_func(cfg, src_tensor, encoder)
 
-        # decode
+        # compute loss
         loss = 0
-        loss, target_max_len = decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden,
-                                           use_teacher_forcing, decoder)
+        # TODO
 
         return float(loss)

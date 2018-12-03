@@ -44,32 +44,15 @@ def model_get(cfg):
         encoder_input_dim = cfg['encoder_input_dim']
         encoder_hidden_dim = cfg['encoder_hidden_dim']
         src_vocab_len = cfg['src_vocab_len']
-        #
-
-        # load decoder config
-        decoder_input_dim = cfg['decoder_input_dim']
-        decoder_hidden_dim = cfg['decoder_hidden_dim']
         target_vocab_len = cfg['target_vocab_len']
         #
 
-        encoder = Encoder(encoder_input_dim, encoder_hidden_dim, src_vocab_len,
+        encoder = Encoder(encoder_input_dim, encoder_hidden_dim, src_vocab_len, target_vocab_len,
                           bidirectional=cfg.encoder_bi_direction, type=cfg.encode_rnn_type).to(cfg.device)
-        if cfg.decode_rnn_type == 'basic_rnn':
-            decoder = DecoderRnn(decoder_input_dim, decoder_hidden_dim, target_vocab_len).to(cfg.device)
-        elif cfg.decode_rnn_type == 'basic_attn':
-            decoder = AttnDecoderRNN(cfg.attn_method, target_vocab_len, decoder_input_dim, decoder_hidden_dim,
-                                     softmax_share_embedd=cfg.softmax_share_embedd,
-                                     pad_token=cfg.target_pad_token).to(cfg.device)
-
-        # share embedding
-        if cfg.share_embedding:
-            decoder.embedding = encoder.embedding
-        #
-
         print('model initialization ok!')
     #
 
-    return encoder, decoder
+    return encoder
 
 
 def seq_max_length_get(seq_csv_path, key):
@@ -119,13 +102,10 @@ def _sort_batch_seq(cfg, input_tensor, batch_size, src_pad_token):
     return input_tensor, sorted_seq_lens, sorted_indices
 
 
-def save_cktpoint(encoder, decoder, encoder_path, decoder_path):
+def save_cktpoint(encoder, encoder_path):
     # save model
     torch.save(encoder, encoder_path)
     print("Save encoder to {}.".format(encoder_path))
-    torch.save(decoder, decoder_path)
-    print("Save decoder to {}.".format(decoder_path))
-
 
 def lcsubstring_length(a, b):
     table = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
@@ -156,7 +136,7 @@ def encode_func(cfg, input_tensor, encoder):
     return encoder_outputs, encoder_hidden
 
 
-def _decode(cfg, decoder, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
+def _decode(cfg, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
             use_teacher_forcing,
             coverage_loss=0,
             coverage_vector=None,
@@ -261,61 +241,6 @@ def beam_search(batch_size, tensor_data, k, return_last=True):
     return output
 
 
-def decode_func(cfg, loss, target_tensor, encoder_outputs, encoder_last_hidden, use_teacher_forcing, decoder,
-                is_test=False):
-    # load config
-    verbose = cfg.verbose
-    target_pad_token = cfg.target_pad_token
-
-    target_max_len = target_tensor.size(1)
-    criterion = cfg.criterion
-
-    # add coverage
-    coverage_vector = None
-    coverage_mask_list = None
-    coverage_loss = 0
-    if cfg.is_coverage:
-        coverage_vector = torch.zeros(encoder_outputs.size(1), encoder_outputs.size(0))
-        # coverage mask
-        coverage_mask_list = []
-        for t in range(target_max_len):
-            mask = target_tensor[:, t, :] != target_pad_token
-            coverage_mask_list.append(mask.view(-1))
-        #
-    #
-
-    # decode
-    decoder_output, coverage_loss, attn_weights = _decode(cfg, decoder, encoder_outputs, target_tensor,
-                                                          encoder_last_hidden, target_max_len,
-                                                          use_teacher_forcing,
-                                                          coverage_loss=coverage_loss,
-                                                          coverage_vector=coverage_vector,
-                                                          coverage_mask_list=coverage_mask_list,
-                                                          is_test=is_test)
-    #
-
-    # decoder_output, target_tensor,
-    loss += criterion(torch.cat(decoder_output, 0), torch.transpose(target_tensor, 0, 1).contiguous().view(-1))
-    loss += coverage_loss / target_max_len  # not accurate because of the padding
-
-    # if verbose:
-    #     print_target = [int(x) for x in target_tensor[0] if int(x) != target_pad_token]
-    #     new_decoded_outputs = []
-    #     for x in decoded_outputs:
-    #         new_decoded_outputs.append(x)
-    #         if x == target_EOS_index:
-    #             break
-    #
-    #     print("\n--------------------------------------------")
-    #     print("decoded_outputs: ", new_decoded_outputs)
-    #     print("target_tensor: ", print_target)
-    #     print("Overlap: ", len(set(print_target).intersection(new_decoded_outputs)) / len(print_target))
-
-    if is_test:
-        return loss, target_max_len, decoder_output, attn_weights
-
-    return loss, target_max_len
-
 
 def plot_attentions(attn_weights, src, target):
     """
@@ -396,17 +321,15 @@ def auto_config_path_etc(cfg):
     cfg.src_vocab_len = len(cfg.src_vocab)
     cfg.target_vocab_len = len(cfg.target_vocab)
     cfg.src_pad_token = int(cfg.src_vocab.index('<PAD>'))
+    cfg.target_pad_token = int(cfg.target_vocab.index('<PAD>'))
     cfg.target_SOS_token = int(cfg.target_vocab.index('<SOS>'))
-    cfg.target_EOS_token = int(cfg.target_vocab.index('<SOS>'))
-    cfg.target_pad_token = int(cfg.target_vocab.index('<SOS>'))
+    cfg.target_EOS_token = int(cfg.target_vocab.index('<EOS>'))
     #
 
     # model hyper-parameters, TODO, change
-    if cfg.is_index_input:
-        cfg.x_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
-    else:
-        cfg.x_pad_shape = (cfg.input_max_len, cfg.encoder_input_dim)
-    cfg.y_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
+    max_length = seq_max_length_get(cfg.train_seq_csv_path, 'target')
+    cfg.y_pad_shape = (max_length, 1)
+    cfg.x_pad_shape = (max_length, cfg.encoder_input_dim)
     #
 
     # training hyper-parameters config

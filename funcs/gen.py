@@ -46,7 +46,7 @@ class Seq2SeqDataSet():
             x_indices = np.array([int(x) for x in self.X_train[index].split(',')])
             x = self._pad_seq(x_indices, self.x_all_padding)
         else:
-            npy_path = os.path.join(self.npy_dir, "{}.npy".format(str(uid)))
+            npy_path = os.path.join(self.npy_dir, "x_{}.npy".format(str(uid)))
             arr = np.load(npy_path)
             x = torch.from_numpy(arr)
             # TODO, remove assert
