@@ -59,7 +59,7 @@ def epoches_train(cfg, train_loader, val_loader, encoder, decoder, epoch_recorde
             # ipdb > batch_y.shape
             # torch.Size([32, 4, 1])
 
-            ipdb.set_trace()
+
             loss = train_1_batch(cfg, batch_x, batch_y, encoder, decoder)
 
             epoch_loss += loss

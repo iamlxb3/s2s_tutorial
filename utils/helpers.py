@@ -79,19 +79,24 @@ def seq_max_length_get(seq_csv_path, key):
     return max_len
 
 
-def _actual_seq_length_compute(input_tensor, batch_size, src_pad_token):
+def _actual_seq_length_compute(input_tensor, batch_size, src_pad_token, is_index_input=False):
     seq_lens = []
     indices = []
     for batch_i in range(batch_size):
-        seq_len = input_tensor[batch_i].squeeze(1)
-        seq_len = len([x for x in seq_len if x != src_pad_token])
+        if is_index_input:
+            seq_len = input_tensor[batch_i].squeeze(1)
+            seq_len = len([x for x in seq_len if x != src_pad_token])
+        else:
+            input_arr = np.array(input_tensor[batch_i])
+            input_arr = np.all(input_arr == 0.0, axis=1)
+            seq_len = len(input_arr[input_arr == False])
         seq_lens.append(seq_len)
         indices.append(batch_i)
     #
     return seq_lens, indices
 
 
-def _sort_batch_seq(input_tensor, batch_size, src_pad_token):
+def _sort_batch_seq(cfg, input_tensor, batch_size, src_pad_token):
     """
 
     :param input_tensor: torch.Size([batch_size, seq_max_len, 1])
@@ -100,7 +105,8 @@ def _sort_batch_seq(input_tensor, batch_size, src_pad_token):
     :return:
     """
     # get the actual length of sequence for each sample
-    src_seq_lens, src_seq_indices = _actual_seq_length_compute(input_tensor, batch_size, src_pad_token)
+    src_seq_lens, src_seq_indices = _actual_seq_length_compute(input_tensor, batch_size, src_pad_token,
+                                                               is_index_input=cfg.is_index_input)
     #
 
     # sort by decreasing order
@@ -109,6 +115,7 @@ def _sort_batch_seq(input_tensor, batch_size, src_pad_token):
     sorted_seq_lens = [x[1] for x in input_tensor_len]
     sorted_indices = [x[2] for x in input_tensor_len]
     #
+
     return input_tensor, sorted_seq_lens, sorted_indices
 
 
@@ -138,7 +145,7 @@ def encode_func(cfg, input_tensor, encoder):
     encoder_h0 = encoder.initHidden(batch_size, cfg.device)
 
     # get the actual length of sequence for each sample, sort by decreasing order
-    input_tensor, sorted_seq_lens, sorted_indices = _sort_batch_seq(input_tensor, batch_size, cfg.src_pad_token)
+    input_tensor, sorted_seq_lens, sorted_indices = _sort_batch_seq(cfg, input_tensor, batch_size, cfg.src_pad_token)
     input_tensor = torch.transpose(input_tensor, 0, 1)  # transpose, batch second
     #
 
@@ -398,7 +405,7 @@ def auto_config_path_etc(cfg):
     if cfg.is_index_input:
         cfg.x_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'source'), 1)
     else:
-        cfg.x_pad_shape = (cfg.input_max_len, cfg.input_dim)
+        cfg.x_pad_shape = (cfg.input_max_len, cfg.encoder_input_dim)
     cfg.y_pad_shape = (seq_max_length_get(cfg.train_seq_csv_path, 'target'), 1)
     #
 

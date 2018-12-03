@@ -1,3 +1,6 @@
+"""
+TODO: 1. make easy_dict frozen:https://stackoverflow.com/questions/25247981/python-freeze-dict-keys-after-creation
+"""
 import torch
 import torch.nn as nn
 
@@ -32,7 +35,6 @@ cfg.seq_max_len = 5  # filter the src samples longer than max_len
 cfg.val_percent = 0.2
 cfg.is_index_input = True # whether the input is represented by index or in high-dimension
 cfg.input_max_len = 50 if not cfg.is_index_input else None
-cfg.input_dim = 100 if not cfg.is_index_input else None
 cfg.train_npy_dir_name = 'train'  # the abs path for train_pt_dir will be updated
 cfg.test_npy_dir_name = 'test'  # the abs path for train_pt_dir will be updated
 #
@@ -60,7 +62,7 @@ cfg.decoder_input_dim = 32
 cfg.encoder_hidden_dim = 32
 cfg.decoder_hidden_dim = 32
 cfg.softmax_share_embedd = False
-cfg.share_embedding = True  # encoder and decoder share the same embedding layer
+cfg.share_embedding = False  # encoder and decoder share the same embedding layer
 if cfg.share_embedding:
     cfg.decoder_input_dim = cfg.encoder_input_dim
 cfg.encoder_bi_direction = False

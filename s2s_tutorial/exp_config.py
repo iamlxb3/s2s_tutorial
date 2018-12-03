@@ -62,10 +62,11 @@ exp2.data_set = 'toy_data4'
 exp2.train_csv_name = 'train.csv'
 exp2.test_csv_name = 'test.csv'
 exp2.is_index_input = False
-
+exp2.batch_size = 128
+exp2.verbose = True
 exp2.is_index_input = False # whether the input is represented by index or in high-dimension
 exp2.input_max_len = 50 if not exp2.is_index_input else None
-exp2.input_dim = 100 if not exp2.is_index_input else None
+exp2.encoder_input_dim = 100
 
 exp2 = auto_config_path_etc(exp2)
 

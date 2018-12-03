@@ -5,7 +5,7 @@ import torch.nn as nn
 
 # RNN
 class Encoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, vocab_size, bidirectional=False, type='rnn'):
+    def __init__(self, input_dim, hidden_dim, vocab_size, bidirectional=False, type='rnn', is_index_input=False):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_dim
         self.n_layers = 1
@@ -15,6 +15,7 @@ class Encoder(nn.Module):
         elif type == 'gru':
             self.rnn = nn.GRU(input_dim, hidden_dim, self.n_layers, bidirectional=bidirectional)
         self.bidirectional = bidirectional
+        self.is_index_input = is_index_input
 
     def forward(self, xt, sorted_seq_lens, sorted_indices, ht):
         """
@@ -27,7 +28,10 @@ class Encoder(nn.Module):
             encoder_outputs : torch.Size([time_steps, batch_size, 256]),
             encoder_hidden: torch.Size([num_layers * num_directions, batch_size, 256])
         """
-        xt = self.embedding(xt).view(xt.size(0), xt.size(1), -1) # output -> (seq_len, batch_size, input_dim)
+
+        if self.is_index_input:
+            xt = self.embedding(xt).view(xt.size(0), xt.size(1), -1) # output -> (seq_len, batch_size, input_dim)
+
         xt = nn.utils.rnn.pack_padded_sequence(xt, lengths=sorted_seq_lens)
         output, hidden = self.rnn(xt, ht)
         output = nn.utils.rnn.pad_packed_sequence(output)[0]  # 返回的seq长度可能和输入的不一样，大概是pad_packed的功能
