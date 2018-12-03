@@ -397,8 +397,8 @@ def auto_config_path_etc(cfg):
     cfg.target_vocab_len = len(cfg.target_vocab)
     cfg.src_pad_token = int(cfg.src_vocab.index('<PAD>'))
     cfg.target_SOS_token = int(cfg.target_vocab.index('<SOS>'))
-    cfg.target_EOS_token = int(cfg.target_vocab.index('<SOS>'))
-    cfg.target_pad_token = int(cfg.target_vocab.index('<SOS>'))
+    cfg.target_EOS_token = int(cfg.target_vocab.index('<EOS>'))
+    cfg.target_pad_token = int(cfg.target_vocab.index('<PAD>'))
     #
 
     # model hyper-parameters, TODO, change
