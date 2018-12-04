@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 
 from easydict import EasyDict as edict
-from utils.helpers import auto_config_path_etc
 
 # config dict
 cfg = edict()
@@ -41,7 +40,7 @@ cfg.test_npy_dir_name = 'test'  # the abs path for train_pt_dir will be updated
 
 # vocab config
 cfg.src_vocab_name = 'dummy_src_vocab.pkl'
-cfg.target_vocab_name = 'NER_vocab.pkl'
+cfg.target_vocab_name = 'NER_vocab.pkl' # 'NER_vocab.pkl'
 #
 
 # data loader config
@@ -72,4 +71,4 @@ cfg.decode_mode = 'greedy'  # beam_search, greedy
 cfg.beam_width = 1  #
 #
 cfg.criterion_cls = nn.NLLLoss
-cfg = auto_config_path_etc(cfg)
+

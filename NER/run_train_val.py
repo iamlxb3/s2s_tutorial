@@ -20,6 +20,7 @@ from funcs.trainer import epoches_train
 from utils.helpers import model_get
 from utils.helpers import plot_results
 from utils.helpers import output_config
+from utils.helpers import auto_config_path_etc
 
 from funcs.gen import Seq2SeqDataSet
 from torch.utils.data import DataLoader
@@ -32,7 +33,7 @@ from ner_exp_config import experiments
 def args_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--e', help='the name of the experiment', type=str, required=False,
-                        choices=list(experiments.keys()))
+                        choices=list(experiments.keys))
     args = parser.parse_args()
     return args
 
@@ -44,7 +45,10 @@ def main():
         cfg = experiments[args.e]
     else:
         from ner_config import cfg
+        cfg = auto_config_path_etc(cfg)
     #
+
+
 
     # load model
     encoder = model_get(cfg)

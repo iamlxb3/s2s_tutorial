@@ -3,6 +3,7 @@ model_pkls/
 !data/s2s_toy_data_copy/
 !data/s2s_toy_data_reverse/
 !data/eng_fra/
+results/
 
 *.bin
 *.txt

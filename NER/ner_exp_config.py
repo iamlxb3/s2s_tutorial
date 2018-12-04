@@ -2,11 +2,13 @@ import ipdb
 import copy
 import os
 import sys
+import inspect
 
 sys.path.append('..')
 
 from ner_config import cfg as default_cfg
 from utils.helpers import auto_config_path_etc
+
 
 # # ------------------------------------------------------
 # # set experiment 1 - for eng_fra dataset
@@ -53,23 +55,51 @@ from utils.helpers import auto_config_path_etc
 # # TODO, add lock after
 # # ------------------------------------------------------
 #
-# # ------------------------------------------------------
-# # set experiment 2 - multiple sequence -> 1 output
-# # ------------------------------------------------------
-# exp2 = copy.copy(default_cfg)
-# exp2.name = 'exp2'
-# exp2.data_set = 'toy_data4'
-# exp2.train_csv_name = 'train.csv'
-# exp2.test_csv_name = 'test.csv'
-# exp2.is_index_input = False
-# exp2.batch_size = 128
-# exp2.verbose = True
-# exp2.is_index_input = False # whether the input is represented by index or in high-dimension
-# exp2.input_max_len = 50 if not exp2.is_index_input else None
-# exp2.encoder_input_dim = 100
+
+
+# ------------------------------------------------------
+# set experiment 2 - multiple sequence -> 1 output
+# ------------------------------------------------------
+def exp2():
+    cfg = copy.copy(default_cfg)
+    cfg.name = 'exp2'
+    cfg.data_set = 's2s_toy_data_copy'
+    cfg.train_csv_name = 'train.csv'
+    cfg.test_csv_name = 'test.csv'
+    cfg.is_index_input = False
+    cfg.batch_size = 512
+    cfg.verbose = True
+    cfg.is_index_input = False  # whether the input is represented by index or in high-dimension
+    cfg.input_max_len = 50 if not cfg.is_index_input else None
+    cfg.encoder_input_dim = 30
+    cfg = auto_config_path_etc(cfg)
+    return cfg
+
+
+# ------------------------------------------------------
 #
-# exp2 = auto_config_path_etc(exp2)
-#
-# # ------------------------------------------------------
-#
-experiments = {}
+class Experiments:
+    def __init__(self):
+        self._experiments = {}
+        self._add_all_experiments()
+
+    @property
+    def experiments(self):
+        return self._experiments
+
+    @property
+    def keys(self):
+        return self._experiments.keys()
+
+    def __call__(self, exp_name):
+        return self._experiments[exp_name]()
+
+    def _add_all_experiments(self):
+        funcs = inspect.getmembers(sys.modules[__name__],
+                                   predicate=lambda f: inspect.isfunction(f) and f.__module__ == __name__)
+        for func_tuple in funcs:
+            func_name, func = func_tuple
+            self._experiments[func_name] = func
+
+
+experiments = Experiments()
