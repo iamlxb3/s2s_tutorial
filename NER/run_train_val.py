@@ -69,7 +69,7 @@ def main():
 
     random.seed(cfg.randseed)  # TODO, add shuffle
     torch.manual_seed(cfg.randseed)
-    shuffled_X_Y_uids = list(zip(X, Y, uids))
+    shuffled_X_Y_uids = list(zip(X, Y, uids))[0:1000]
     random.shuffle(shuffled_X_Y_uids)
     X, Y, uids = zip(*shuffled_X_Y_uids)
     val_percent = cfg.val_percent
@@ -105,10 +105,13 @@ def main():
     print('Training done!')
     #
 
+    #
+    if not os.path.isdir(cfg.exp_dir):
+        os.makedirs(cfg.exp_dir)
+    #
+
     # plot results
     if cfg.plot_loss:
-        if not os.path.isdir(cfg.exp_dir):
-            os.makedirs(cfg.exp_dir)
         plot_results(epoch_recorder, title='', save_path=os.path.join(cfg.exp_dir, 'loss.png'))
     #
 

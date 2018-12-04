@@ -63,8 +63,8 @@ cfg.encoder_bi_direction = True
 
 # training hyper-parameters config
 cfg.lr = 1e-3
-cfg.epoches = 100
-cfg.batch_size = 128
+cfg.epoches = 2
+cfg.batch_size = 512
 cfg.test_batch_size = 1
 cfg.use_teacher_forcing = False
 cfg.teacher_forcing_ratio = 0.0

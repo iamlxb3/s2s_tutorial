@@ -107,6 +107,7 @@ def save_cktpoint(encoder, encoder_path):
     torch.save(encoder, encoder_path)
     print("Save encoder to {}.".format(encoder_path))
 
+
 def lcsubstring_length(a, b):
     table = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
     l = 0
@@ -134,74 +135,6 @@ def encode_func(cfg, input_tensor, encoder):
     #
 
     return encoder_outputs, encoder_hidden
-
-
-def _decode(cfg, encoder_outputs, target_tensor, encoder_last_hidden, target_max_len,
-            use_teacher_forcing,
-            coverage_loss=0,
-            coverage_vector=None,
-            coverage_mask_list=None,
-            is_test=False):
-    # initialize decoder_hidden, decoder_input_0
-    decoder_hidden = encoder_last_hidden
-    decoder_input_t = (torch.ones((target_tensor.size(0), 1)) * cfg.target_SOS_token).long().to(cfg.device)
-
-    attn_weights = []
-    decoder_output = []
-
-    loss_ = 0
-    for t in range(target_max_len):
-
-        # (1.) basic rnn
-        if cfg.decode_rnn_type == 'basic_rnn':
-            decoder_output_t, decoder_hidden = decoder(decoder_input_t, decoder_hidden)
-        # (2.) basic attn
-        elif cfg.decode_rnn_type == 'basic_attn':
-            # coverage
-            if cfg.is_coverage:
-                if t != 0:
-                    coverage_mask = coverage_mask_list[t]
-                    coverage_loss_t = torch.sum(torch.min(coverage_vector, attn_weight_t.squeeze(1)), 1)
-                    coverage_loss_t = coverage_loss_t[coverage_mask]
-                    coverage_loss_t = torch.sum(coverage_loss_t)
-                    coverage_vector = coverage_vector + attn_weight_t.squeeze(1)
-                elif t == 0:
-                    coverage_loss_t = 0
-                    # print("{}-coverage_loss: {}".format(t, coverage_loss_t))
-            decoder_output_t, decoder_hidden, attn_weight_t = decoder(decoder_input_t, decoder_hidden, encoder_outputs,
-                                                                      coverage=coverage_vector)
-            attn_weights.append(attn_weight_t)
-
-        # gather decoder output
-        decoder_output.append(decoder_output_t)
-        #
-
-        # ipdb> decoder_input_t, torch.Size([4, 1])
-        # tensor([[  4],
-        #         [  2],
-        #         [ 12],
-        #         [  2]])
-
-        if not use_teacher_forcing:
-            # TODO, optimise beam search
-            if cfg.decode_mode == 'beam_search':
-                if is_test:
-                    batch_size = cfg.test_batch_size
-                else:
-                    batch_size = cfg.batch_size
-                decoder_input_t = beam_search(batch_size, decoder_output, cfg.beam_width)
-            elif cfg.decode_mode == 'greedy':
-                topv, topi = decoder_output_t.topk(1)
-                decoder_input_t = topi.detach()  # .detach() or not?  # detach from history as input
-        else:
-            decoder_input_t = target_tensor[:, t, :]
-
-        # accumulate coverage loss
-        if cfg.is_coverage:
-            coverage_loss += coverage_loss_t
-        #
-
-    return decoder_output, coverage_loss, attn_weights
 
 
 # beam search
@@ -239,7 +172,6 @@ def beam_search(batch_size, tensor_data, k, return_last=True):
 
     output = torch.tensor(output)
     return output
-
 
 
 def plot_attentions(attn_weights, src, target):
@@ -291,6 +223,9 @@ def plot_results(epoch_recorder, title='', save_path='', is_show=True):
 
 
 def output_config(config, config_output_path):
+    # modify vocab values
+    too_long_dict = {k: v[:20] + ['...'] for k, v in config.items() if isinstance(v, list) and len(v) > 20}
+    config = {k: too_long_dict[k] if k in too_long_dict else v for k, v in config.items()}
     df = pd.DataFrame(list(config.items()))
     df.to_csv(config_output_path, index=False, header=False)
 
@@ -339,3 +274,14 @@ def auto_config_path_etc(cfg):
     # TODO, add path assert
 
     return cfg
+
+
+def loss_compute(loss, cfg, Y_predict, target_tensor):
+    Y_predict = torch.transpose(Y_predict, 0, 1)
+    target_tensor = target_tensor[:, :Y_predict.size(1)]
+    target_tensor = target_tensor.contiguous().view(-1)
+    mask = target_tensor != cfg.target_pad_token
+    target_tensor = target_tensor[mask]
+    Y_predict = Y_predict.contiguous().view(-1, Y_predict.size(2))[mask]
+    loss += cfg.criterion(Y_predict, target_tensor)
+    return loss
